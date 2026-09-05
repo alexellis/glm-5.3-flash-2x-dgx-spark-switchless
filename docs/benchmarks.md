@@ -10,18 +10,45 @@ questions:
 No prompt text, user identity, session identifier, private endpoint, or raw
 gateway row is included.
 
-## How the controlled sweep was measured
+## Current completed-output reference
+
+The public [RigMark](https://github.com/alexellis/rigmark) sweep uses a
+4,096-token ceiling, retains visible answers for audit, and rejects truncated
+or reasoning-only results. Native `reasoning_effort=low` produced:
+
+| Workload | Runs | Decode median | Run range | Gate |
+|---|---:|---:|---:|---:|
+| Code | 5 | **44.040 tok/s** | 31.634–47.736 | 5/5 |
+| Prose | 5 | **18.859 tok/s** | 17.831–19.318 | 5/5 |
+| Structured ceiling | 5 | **64.919 tok/s** | 63.936–66.810 | 5/5 |
+
+The first two code requests followed a fresh engine start and were slower;
+three later samples reached 44.0–47.7 tok/s. A separate warm five-run control
+removed that ambiguity: code was **44.0 tok/s** (42.1–45.2), completed prose
+was **18.6 tok/s** (18.3–18.9), and structured output was **66.1 tok/s**
+(63.9–67.7).
+
+The full receipt also measured cold 64K prefill at **1,922 tok/s**, warm 64K
+replay at **11,363 tok/s**, and short-code aggregate throughput of **31.6**,
+**42.0**, and **66.1 tok/s** at concurrency one, two, and four. These aggregate
+figures include the whole request and use a 256-token cap; they are not prose
+decode rates.
+
+## Legacy 512-token checkpoint sweep
 
 The TP2 harness used the same two fixed workload shapes for every candidate:
 
 - code: a production-quality Go implementation task; and
 - prose: an approximately 700-word engineering memo.
 
-Each run requested 512 output tokens at temperature zero. Decode rate is
-completion tokens divided by the generation interval after first token, rather
-than completion tokens divided by the entire request. Tables report the median
-of five runs. Prefill used unique cold markers to defeat prefix reuse, then
-replayed the same prefix to expose the warm-cache path.
+Each run requested 512 output tokens at temperature zero. That was sufficient
+for a controlled Libert/Red Hat checkpoint comparison, but not for the requested
+roughly 700-word memo. The values below describe an early generation slice, not
+completed code or prose. Decode rate is completion tokens divided by the
+generation interval after first token, rather than completion tokens divided by
+the entire request. Tables report the median of five runs. Prefill used unique
+cold markers to defeat prefix reuse, then replayed the same prefix to expose the
+warm-cache path.
 
 The raw local harness contained response previews. They are deliberately not
 published; aggregate values are sufficient for this recipe.
@@ -37,10 +64,10 @@ native `flashinfer_cutlass`, FP8 KV, and DFlash2 `k=7`:
 | Code | 5 | **28.812 tok/s** | 23.978–30.978 | 0.483s |
 | Prose | 5 | **22.919 tok/s** | 21.161–23.112 | 0.500s |
 
-These are the numbers to use for ordinary coding and conversation. Structured
-lists, JSON, and counting are easier for the speculative drafter to predict and
-can be much faster; quoting that rate as “GLM speed” overstates an agent's
-experience.
+Do not use these as the current ordinary coding or conversation headline. The
+completed-output RigMark reference above supersedes them. Structured lists,
+JSON, and counting are easier for the speculative drafter to predict and can be
+much faster; quoting that rate as “GLM speed” overstates an agent's experience.
 
 ### Cold and warm prefill
 
@@ -117,9 +144,9 @@ For outputs long enough to make the rate meaningful:
 | 150 tokens | 284 | **23.54 tok/s** | 25.96 | 4.16–63.51 |
 
 The mean is higher than the median because predictable tool, code-structure,
-and list fragments draft particularly well. The controlled prose median and
-the ≥150-token operational median agree closely: expect roughly 23 tok/s for
-long natural output, with code and structured turns often faster.
+and list fragments draft particularly well. This mixed operational median is
+higher than completed long prose for the same reason. For a sustained natural
+memo, use the 18–19 tok/s completed-output reference above.
 
 ### Behaviour by prompt depth
 

@@ -49,18 +49,18 @@ pair, not maxima:
 
 | Workload | Median decode | Observed range |
 |---|---:|---:|
-| Code | **28.8 tok/s** | 24.0–31.0 tok/s |
-| Prose | **22.9 tok/s** | 21.2–23.1 tok/s |
+| Completed code | **44.0 tok/s** | 31.6–47.7 tok/s |
+| Completed prose | **18.9 tok/s** | 17.8–19.3 tok/s |
 
 Cold prefill used a unique marker on every run to prevent prefix-cache reuse:
 
 | Prompt depth | Cold TTFT | Cold effective prefill |
 |---:|---:|---:|
-| 8,192 tokens | 4.470s | **1,833 tok/s** |
-| 32,768 tokens | 17.057s | **1,921 tok/s** |
-| 65,536 tokens | 34.051s | **1,925 tok/s** |
+| 8,192 tokens | 4.519s | **1,813 tok/s** |
+| 32,768 tokens | 17.175s | **1,908 tok/s** |
+| 65,536 tokens | 34.105s | **1,922 tok/s** |
 
-A warm 64K prefix replay reached about 11,395 tok/s. Structured output can be
+A warm 64K prefix replay reached about 11,363 tok/s. Structured output can be
 much faster than prose and must not be presented as an everyday agent speed.
 The complete method and unrounded values are in
 [`docs/benchmarks.md`](docs/benchmarks.md).
@@ -76,7 +76,7 @@ this lane with our TP4 ring or JSpark3's substantially different EXL3 TP3 lane.
 
 ## Run the public benchmark
 
-Use [`alexellis/llm-appliance-bench`](https://github.com/alexellis/llm-appliance-bench)
+Use [`alexellis/rigmark`](https://github.com/alexellis/rigmark)
 for new comparisons with TP4, another quantisation, or another model. It fixes
 the code, prose, structured, prefill, and concurrency workloads; records the
 appliance recipe; and refuses to compare mismatched settings by default.
@@ -85,7 +85,7 @@ Use an explicit GLM reasoning effort and reuse the same comparison ID on every
 appliance in the sweep:
 
 ```bash
-python3 bench.py \
+./rigmark run \
   --base-url http://HEAD:8000 \
   --model auto \
   --label glm53-libert-nvfp4-tp2-low \
@@ -93,6 +93,11 @@ python3 bench.py \
   --metadata metadata.json \
   --extra-body '{"chat_template_kwargs":{"reasoning_effort":"low"}}'
 ```
+
+The published 4,096-token reference completed every code, prose, and
+structured output. The older 512-token sweep in the benchmark document remains
+useful for checkpoint A/Bs, but it did not allow the requested 700-word memo to
+finish and must not be cited as completed-prose throughput.
 
 Publish the unedited result JSON. A tok/s figure is diagnostic when its
 completion gate fails; it is not evidence of completed code, prose, or valid

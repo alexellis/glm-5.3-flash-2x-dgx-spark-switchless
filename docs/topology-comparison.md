@@ -10,16 +10,16 @@ context window, and harness differ.
 | Checkpoint format | ModelOpt NVFP4 | Red Hat W4A4 NVFP4 | EXL3/TR3 4 bpw |
 | Speculation | DFlash2 k=7 | DFlash2 k=7 | DFlash2 |
 | Configured context | 262K | 262K | 1M |
-| Code decode | **28.8** | not measured | **66.3** |
-| Prose decode | **22.9** | **37.6–40.6** | **29.0** |
-| Structured decode | not measured | not measured | **82.0** |
-| Cold prefill, 8K | **1,833** | **1,881–2,233** | not published at 8K |
-| Cold prefill, 32K | **1,921** | **2,278–2,288** | not published at 32K |
-| Cold prefill, 64K | **1,925** | **2,263–2,273** | not published at 64K |
+| Code decode | **44.0** | not measured | **66.3** |
+| Prose decode | **18.9** | **37.6–40.6** | **29.0** |
+| Structured decode | **64.9** | not measured | **82.0** |
+| Cold prefill, 8K | **1,813** | **1,881–2,233** | not published at 8K |
+| Cold prefill, 32K | **1,908** | **2,278–2,288** | not published at 32K |
+| Cold prefill, 64K | **1,922** | **2,263–2,273** | not published at 64K |
 | Cold prefill, 114K | not measured | ~2,240 at 128K | **1,234** |
-| Warm replay, 32K | **11,009** | **15,150–15,430** | not comparable |
-| Code-like TTFT | **0.483s** at a shallow prompt | not measured | **0.391s** clamp-code |
-| Four-stream aggregate | not measured | not measured under the controlled harness | **251** |
+| Warm replay, 32K | **11,046** | **15,150–15,430** | not comparable |
+| Code-like TTFT | **0.602s** at a shallow prompt | not measured | **0.391s** clamp-code |
+| Four-stream aggregate | **66.1** short code-load | not measured under the controlled harness | **251** |
 
 Rates are tokens/second. A range in our TP4 column is the baseline/restored
 pair of sweeps, not run-to-run cherry-picking.
@@ -28,9 +28,9 @@ pair of sweeps, not run-to-run cherry-picking.
 
 Using each topology's retained controlled harness:
 
-- TP4 prose was 1.64–1.77× TP2 prose;
+- TP4 prose was 1.99–2.15× TP2 completed prose;
 - TP4 cold 32K prefill was 1.19× TP2; and
-- TP4 warm 32K replay was 1.38–1.40× TP2.
+- TP4 warm 32K replay was 1.37–1.40× TP2.
 
 The decode gain is much larger than the cold-prefill gain. That is consistent
 with GLM benefiting from four-way weight and expert distribution while prompt
@@ -59,8 +59,9 @@ recipe and get 66 tok/s”. JSpark3 changes several variables at once:
 - its own estimator and prompt battery.
 
 Most importantly, JSpark3's headline “66.3 versus 44.6 on two Sparks” compares
-against its compatibility-adapted Mia EXL3 TP2 baseline. Our measured NVFP4 TP2
-code rate is 28.8 tok/s. The 44.6 number was never a measurement of this
+against its compatibility-adapted Mia EXL3 TP2 baseline. Our current
+completed-output NVFP4 TP2 code rate is 44.0 tok/s. Its numerical similarity
+to 44.6 is coincidental: the JSpark3 baseline was never a measurement of this
 repository.
 
 Jake's own report is unusually candid about the trade-offs: its matched 114K
