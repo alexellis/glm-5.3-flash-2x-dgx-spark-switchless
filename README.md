@@ -114,6 +114,12 @@ interface. The exact patched NCCL library used by the reference pair has SHA256
 the launcher refuses a different binary. Build notes for the skip-tree-connect
 NCCL 2.30.7 patch are retained in the sibling TP4 recipe.
 
+The rank launcher treats these as gates, not suggestions. Before loading the
+model on either node it verifies the active RoCE-v2 GID and its interface
+mapping, MTU 9000, an 8,972-byte no-fragment ping, the NCCL and official chat
+template checksums, and an idle GPU. A stale TP4→TP2 fabric state therefore
+fails in seconds rather than hanging in EngineCore or NCCL minutes later.
+
 Run the installer on both nodes with the same configuration, selecting
 `--head` only on rank 0:
 
@@ -164,6 +170,8 @@ Run the full gate before advertising the endpoint:
 - Never start the head first.
 - Never restart only one rank after an EngineCore failure.
 - Never treat `/v1/models` as readiness; use `/health`.
+- Never retry a failed mode switch until the GID, MTU, jumbo ping, and GPU-idle
+  pre-flight is green on both ranks.
 - Stop the unit before switching image, checkpoint, KV size, or serve flags.
 - Keep the FlashInfer and vLLM caches persistent across boots.
 - A stopped or failed systemd activation must reap both containers.

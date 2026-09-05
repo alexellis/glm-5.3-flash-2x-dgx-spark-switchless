@@ -18,6 +18,8 @@ log() {
 }
 
 remote() {
+    # Arguments are deliberately interpreted by the remote shell.
+    # shellcheck disable=SC2029
     ssh "${SSH_OPTS[@]}" "$SSH_USER@$WORKER_HOST" "$@"
 }
 

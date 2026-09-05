@@ -10,6 +10,8 @@ CONFIG_FILE="${GLM53_CONFIG:-/etc/glm53-tp2.env}"
 # shellcheck disable=SC1090
 source "$CONFIG_FILE"
 
+GID_INDEX="${GID_INDEX:-3}"
+
 required=(
     HEAD_HOST WORKER_HOST SSH_USER FABRIC_IFACE FABRIC_HCA FABRIC_CIDR
     HEAD_FABRIC_IP WORKER_FABRIC_IP PORT MASTER_PORT CONTAINER_NAME IMAGE
@@ -37,4 +39,6 @@ if [[ "$ADAPTIVE_K" == "1" && "$SPEC_TOKENS" != "5" ]]; then
     exit 1
 fi
 
+# Consumed by scripts which source this library.
+# shellcheck disable=SC2034
 SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new)

@@ -36,8 +36,40 @@ echo "$NCCL_SHA256  $NCCL_HOST_PATH/libnccl.so.2" | sha256sum -c -
 test -f "$RUNTIME_DIR/patches/modelopt.py"
 test -f "$RUNTIME_DIR/patches/kernel_warmup.py"
 test -f "$RUNTIME_DIR/templates/chat_template.jinja"
+echo '0c4099f3382d6c92700dfb99725025360966fd73032f0ecf32377c0d9e6309c5  '"$RUNTIME_DIR/templates/chat_template.jinja" | sha256sum -c -
+
+HCA_BASE="/sys/class/infiniband/$FABRIC_HCA/ports/1"
+test -d "$HCA_BASE"
+[[ $(<"$HCA_BASE/state") == '4: ACTIVE' ]] || {
+    echo "$FABRIC_HCA is not ACTIVE" >&2
+    exit 1
+}
+GID=$(cat "$HCA_BASE/gids/$GID_INDEX" 2>/dev/null || true)
+GID_TYPE=$(cat "$HCA_BASE/gid_attrs/types/$GID_INDEX" 2>/dev/null || true)
+GID_DEVICE=$(cat "$HCA_BASE/gid_attrs/ndevs/$GID_INDEX" 2>/dev/null || true)
+[[ "$GID_TYPE" == 'RoCE v2' ]] || {
+    echo "$FABRIC_HCA GID $GID_INDEX is not RoCE v2" >&2
+    exit 1
+}
+[[ -n "$GID" && "$GID" != '0000:0000:0000:0000:0000:0000:0000:0000' ]] || {
+    echo "$FABRIC_HCA GID $GID_INDEX is empty; reboot after the fabric-mode change" >&2
+    exit 1
+}
+[[ "$GID_DEVICE" == "$FABRIC_IFACE" ]] || {
+    echo "$FABRIC_HCA GID $GID_INDEX maps to $GID_DEVICE, not $FABRIC_IFACE" >&2
+    exit 1
+}
+[[ $(<"/sys/class/net/$FABRIC_IFACE/mtu") == 9000 ]] || {
+    echo "$FABRIC_IFACE MTU is not 9000" >&2
+    exit 1
+}
 ip -4 address show dev "$FABRIC_IFACE" | grep -Fq "$HOST_IP/24"
-ping -I "$FABRIC_IFACE" -c 1 -W 2 "$PEER_IP" >/dev/null
+ping -I "$FABRIC_IFACE" -M 'do' -s 8972 -c 2 -W 2 "$PEER_IP" >/dev/null
+if nvidia-smi --query-compute-apps=pid --format=csv,noheader,nounits 2>/dev/null |
+    grep -Eq '[0-9]'; then
+    echo 'another process is using the GPU; stop the other appliance first' >&2
+    exit 1
+fi
 
 ADAPTIVE_DOCKER_ARGS=()
 ADAPTIVE_VLLM_ARGS=()
@@ -96,7 +128,7 @@ docker run --gpus all -d \
     -e GLM53_TRUST_FLASHINFER_CACHE=1 \
     -e NCCL_NET=IB -e NCCL_IB_DISABLE=0 \
     -e NCCL_SKIP_TREE_CONNECT=1 -e NCCL_ALGO=Ring \
-    -e NCCL_IB_HCA="$FABRIC_HCA" -e NCCL_IB_GID_INDEX=3 \
+    -e NCCL_IB_HCA="$FABRIC_HCA" -e NCCL_IB_GID_INDEX="$GID_INDEX" \
     -e NCCL_IB_ROCE_VERSION_NUM=2 -e NCCL_IB_ADDR_FAMILY=AF_INET \
     -e NCCL_IB_ADDR_RANGE="$FABRIC_CIDR" \
     -e NCCL_SOCKET_IFNAME="$FABRIC_IFACE" \
@@ -122,7 +154,7 @@ docker run --gpus all -d \
     --tool-call-parser glm47 --enable-auto-tool-choice \
     --chat-template /models/chat_template.jinja \
     --reasoning-parser deepseek_r1 \
-    --default-chat-template-kwargs '{"enable_thinking": true}' \
+    --default-chat-template-kwargs '{"reasoning_effort":"max"}' \
     "${ADAPTIVE_VLLM_ARGS[@]}" \
     --distributed-executor-backend mp \
     --nnodes 2 --node-rank "$NODE_RANK" \
