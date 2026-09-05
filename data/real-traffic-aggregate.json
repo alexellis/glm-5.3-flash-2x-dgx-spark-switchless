@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "model": "glm-5.3-flash",
+  "topology_annotation": "TP2 direct 100GbE RoCE",
+  "annotation_caveat": "The gateway stores model ID, not topology or checkpoint. The serving window was mapped from the operational change log.",
+  "privacy": "Aggregate only; no prompts, users, sessions, endpoints, or raw rows.",
+  "requests": 429,
+  "http_2xx_rows": 429,
+  "rows_with_decode_rate": 420,
+  "rows_with_ttft": 428,
+  "prompt_tokens": 43122786,
+  "completion_tokens": 344008,
+  "prompt_to_completion_ratio": 125.4,
+  "median_completion_tokens": 265,
+  "max_completion_tokens": 11916,
+  "max_context_tokens": 207940,
+  "summed_request_hours": 5.01,
+  "client_interrupted": 4,
+  "loops": 0,
+  "decode": {
+    "completion_at_least_50": {
+      "samples": 390,
+      "median_tokens_per_second": 25.21,
+      "mean_tokens_per_second": 27.68,
+      "minimum_tokens_per_second": 4.16,
+      "maximum_tokens_per_second": 63.51
+    },
+    "completion_at_least_150": {
+      "samples": 284,
+      "median_tokens_per_second": 23.54,
+      "mean_tokens_per_second": 25.96,
+      "minimum_tokens_per_second": 4.16,
+      "maximum_tokens_per_second": 63.51
+    }
+  },
+  "prompt_bands": [
+    {"band": "under 8K", "requests": 13, "average_prompt": 3929, "maximum_prompt": 7911, "median_ttft_seconds": 3.95, "decode_samples": 8, "median_decode_tokens_per_second": 32.9},
+    {"band": "8-32K", "requests": 55, "average_prompt": 18805, "maximum_prompt": 31752, "median_ttft_seconds": 5.27, "decode_samples": 50, "median_decode_tokens_per_second": 21.8},
+    {"band": "32-64K", "requests": 59, "average_prompt": 48444, "maximum_prompt": 62851, "median_ttft_seconds": 5.45, "decode_samples": 57, "median_decode_tokens_per_second": 22.5},
+    {"band": "64-128K", "requests": 137, "average_prompt": 100615, "maximum_prompt": 127957, "median_ttft_seconds": 5.09, "decode_samples": 125, "median_decode_tokens_per_second": 24.6},
+    {"band": "128K+", "requests": 164, "average_prompt": 157732, "maximum_prompt": 207343, "median_ttft_seconds": 5.06, "decode_samples": 150, "median_decode_tokens_per_second": 27.0}
+  ]
+}

@@ -1,18 +1,56 @@
 {
-  "schema": 1,
+  "schema": 2,
   "date": "2026-09-04",
   "topology": "TP2 direct 100GbE RoCE",
   "model": "LibertAIDAI/GLM-5.3-Flash-NVFP4",
   "model_revision": "caca4e6a4ebbd66f159d3d2fc256683fd6e27177",
   "drafter": "incoai/GLM-5.3-Flash-DFlash2",
   "drafter_revision": "bf582e4eacc1810f76656d1811693ff6c6737d2a",
-  "runs_per_decode_workload": 5,
-  "measurements": {
-    "code_decode_median_tokens_per_second": 28.812,
-    "prose_decode_median_tokens_per_second": 22.919,
-    "cold_prefill_8192_tokens_per_second": 1832.7,
-    "cold_prefill_32768_tokens_per_second": 1921.1,
-    "cold_prefill_65536_tokens_per_second": 1924.6,
-    "warm_replay_65536_tokens_per_second": 11395.4
+  "configuration": {
+    "moe_backend": "flashinfer_cutlass",
+    "draft_tokens": 7,
+    "kv_dtype": "fp8_e4m3",
+    "kv_bytes_per_rank": 4294967296,
+    "max_model_len": 262144,
+    "max_num_sequences": 6,
+    "max_batched_tokens": 8192
+  },
+  "method": {
+    "runs_per_decode_workload": 5,
+    "requested_completion_tokens": 512,
+    "temperature": 0,
+    "decode_estimator": "completion tokens divided by first-to-last-token interval",
+    "cold_prefill": "unique prefix marker",
+    "warm_prefill": "identical prefix replay"
+  },
+  "decode": {
+    "code": {
+      "median_tokens_per_second": 28.812,
+      "minimum_tokens_per_second": 23.978,
+      "maximum_tokens_per_second": 30.978,
+      "median_ttft_seconds": 0.483
+    },
+    "prose": {
+      "median_tokens_per_second": 22.919,
+      "minimum_tokens_per_second": 21.161,
+      "maximum_tokens_per_second": 23.112,
+      "median_ttft_seconds": 0.5
+    }
+  },
+  "prefill": [
+    {"prompt_tokens": 8192, "cold_ttft_seconds": 4.4699, "cold_tokens_per_second": 1832.7, "warm_ttft_seconds": 4.5135, "warm_tokens_per_second": 1815.0},
+    {"prompt_tokens": 32768, "cold_ttft_seconds": 17.0565, "cold_tokens_per_second": 1921.1, "warm_ttft_seconds": 2.9765, "warm_tokens_per_second": 11009.1},
+    {"prompt_tokens": 65536, "cold_ttft_seconds": 34.0509, "cold_tokens_per_second": 1924.6, "warm_ttft_seconds": 5.7511, "warm_tokens_per_second": 11395.4}
+  ],
+  "redhat_control": {
+    "checkpoint": "RedHatAI/GLM-5.3-Flash-NVFP4",
+    "moe_backend": "marlin",
+    "code_decode_median_tokens_per_second": 27.492,
+    "prose_decode_median_tokens_per_second": 21.914,
+    "prefill": [
+      {"prompt_tokens": 8192, "cold_ttft_seconds": 4.846, "cold_tokens_per_second": 1690.5, "warm_ttft_seconds": 4.9464, "warm_tokens_per_second": 1656.1},
+      {"prompt_tokens": 32768, "cold_ttft_seconds": 18.8704, "cold_tokens_per_second": 1736.5, "warm_ttft_seconds": 3.2037, "warm_tokens_per_second": 10228.3},
+      {"prompt_tokens": 65536, "cold_ttft_seconds": 37.6379, "cold_tokens_per_second": 1741.2, "warm_ttft_seconds": 6.2494, "warm_tokens_per_second": 10486.8}
+    ]
   }
 }

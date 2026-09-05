@@ -56,6 +56,15 @@ reached about 11,395 tok/s. Structured output can be much faster than prose and
 must not be presented as an everyday agent speed. See
 [`docs/benchmarks.md`](docs/benchmarks.md).
 
+The evidence now includes 429 HTTP-2xx real-traffic rows carrying 43.1M prompt
+tokens, contexts up to 207,940 tokens, median 25.2 tok/s across outputs of at
+least 50 tokens, four client-interrupted streams, and no recorded repetition
+loops. The operational cohort,
+controlled five-run distributions, exact TTFT/prefill tables, Red Hat A/B, and
+identical OpenCode task are all in the benchmark document. See
+[`docs/topology-comparison.md`](docs/topology-comparison.md) before comparing
+this lane with our TP4 ring or JSpark3's substantially different EXL3 TP3 lane.
+
 ## Install
 
 Start with a normal direct SparkLink/RoCE pair. The fabric interface must carry
