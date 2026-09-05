@@ -44,16 +44,25 @@ long-context and concurrency gates before becoming the default.
 ## What is actually fast
 
 Real output is workload-dependent because speculative acceptance is
-workload-dependent. Controlled, five-run medians from the reference pair:
+workload-dependent. These are controlled five-run results from the reference
+pair, not maxima:
 
-| Workload | Decode |
-|---|---:|
-| Code | 28.8 tok/s |
-| Prose | 22.9 tok/s |
+| Workload | Median decode | Observed range |
+|---|---:|---:|
+| Code | **28.8 tok/s** | 24.0–31.0 tok/s |
+| Prose | **22.9 tok/s** | 21.2–23.1 tok/s |
 
-Cold prefill was about 1,921 tok/s at both 32K and 64K. A warm 64K prefix replay
-reached about 11,395 tok/s. Structured output can be much faster than prose and
-must not be presented as an everyday agent speed. See
+Cold prefill used a unique marker on every run to prevent prefix-cache reuse:
+
+| Prompt depth | Cold TTFT | Cold effective prefill |
+|---:|---:|---:|
+| 8,192 tokens | 4.470s | **1,833 tok/s** |
+| 32,768 tokens | 17.057s | **1,921 tok/s** |
+| 65,536 tokens | 34.051s | **1,925 tok/s** |
+
+A warm 64K prefix replay reached about 11,395 tok/s. Structured output can be
+much faster than prose and must not be presented as an everyday agent speed.
+The complete method and unrounded values are in
 [`docs/benchmarks.md`](docs/benchmarks.md).
 
 The evidence now includes 429 HTTP-2xx real-traffic rows carrying 43.1M prompt
