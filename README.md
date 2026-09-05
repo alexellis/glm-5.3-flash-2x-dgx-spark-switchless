@@ -74,6 +74,30 @@ identical OpenCode task are all in the benchmark document. See
 [`docs/topology-comparison.md`](docs/topology-comparison.md) before comparing
 this lane with our TP4 ring or JSpark3's substantially different EXL3 TP3 lane.
 
+## Run the public benchmark
+
+Use [`alexellis/llm-appliance-bench`](https://github.com/alexellis/llm-appliance-bench)
+for new comparisons with TP4, another quantisation, or another model. It fixes
+the code, prose, structured, prefill, and concurrency workloads; records the
+appliance recipe; and refuses to compare mismatched settings by default.
+
+Use an explicit GLM reasoning effort and reuse the same comparison ID on every
+appliance in the sweep:
+
+```bash
+python3 bench.py \
+  --base-url http://HEAD:8000 \
+  --model auto \
+  --label glm53-libert-nvfp4-tp2-low \
+  --comparison-id YOUR-SWEEP-ID \
+  --metadata metadata.json \
+  --extra-body '{"chat_template_kwargs":{"reasoning_effort":"low"}}'
+```
+
+Publish the unedited result JSON. A tok/s figure is diagnostic when its
+completion gate fails; it is not evidence of completed code, prose, or valid
+structured output.
+
 ## Install
 
 Start with a normal direct SparkLink/RoCE pair. The fabric interface must carry
