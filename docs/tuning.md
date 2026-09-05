@@ -4,16 +4,18 @@ The checked-in values favour a reliable interactive and coding lane.
 
 ## KV capacity
 
-At 4 GiB per rank, vLLM reported 394,488 logical tokens for the service. The
+At 4 GiB per rank with the selected adaptive `k=3/5` policy, vLLM reported
+427,708 logical tokens for the service. The former fixed-`k=7` configuration
+reported 394,488. The
 pool is service-wide; do not add the two rank log values together.
 
 Linear capacity estimates are useful only for choosing the next experiment:
 
 | KV per rank | Estimated logical pool | Status |
 |---|---:|---|
-| 4 GiB | 394K | cold-boot proven |
-| 6 GiB | 592K | next measured trial |
-| 8 GiB | 789K | memory-risk trial |
+| 4 GiB | 428K | cold-boot proven |
+| 6 GiB | 642K | next measured trial |
+| 8 GiB | 855K | memory-risk trial |
 
 The 8 GiB option is not a free upgrade. Model weights, drafter, vision tower,
 compile workspace, graphs, activations, and host page cache all share the GB10

@@ -18,21 +18,40 @@ or reasoning-only results. Native `reasoning_effort=low` produced:
 
 | Workload | Runs | Decode median | Run range | Gate |
 |---|---:|---:|---:|---:|
-| Code | 5 | **44.040 tok/s** | 31.634–47.736 | 5/5 |
-| Prose | 5 | **18.859 tok/s** | 17.831–19.318 | 5/5 |
-| Structured ceiling | 5 | **64.919 tok/s** | 63.936–66.810 | 5/5 |
+| Code | 5 | **42.575 tok/s** | 38.978–44.704 | 5/5 |
+| Prose | 5 | **22.162 tok/s** | 21.831–22.283 | 5/5 |
+| Structured ceiling | 5 | **54.623 tok/s** | 52.956–55.722 | 5/5 |
 
-The first two code requests followed a fresh engine start and were slower;
-three later samples reached 44.0–47.7 tok/s. A separate warm five-run control
-removed that ambiguity: code was **44.0 tok/s** (42.1–45.2), completed prose
-was **18.6 tok/s** (18.3–18.9), and structured output was **66.1 tok/s**
-(63.9–67.7).
+This is the selected acceptance-guided DFlash2 policy. It begins at `k=5` and
+uses a per-request EMA to drop low-acceptance output to `k=3`. The same endpoint
+passed text, tool-call, 80,032-token retrieval, and image gates.
 
-The full receipt also measured cold 64K prefill at **1,922 tok/s**, warm 64K
-replay at **11,363 tok/s**, and short-code aggregate throughput of **31.6**,
-**42.0**, and **66.1 tok/s** at concurrency one, two, and four. These aggregate
+The [complete JSON receipt](../data/rigmark/adaptive-k3-k5-full.json) records a
+clean RigMark `d8353e9` worktree and TP2 recipe `6163f2e`. It measured cold 64K
+prefill at **1,905 tok/s**, warm 64K replay at **11,464 tok/s**, and short-code
+aggregate throughput of **31.2**, **42.8**, and **61.1 tok/s** at concurrency
+one, two, and four. These aggregate
 figures include the whole request and use a 256-token cap; they are not prose
 decode rates.
+
+### Speculative-depth sweep
+
+The adaptive policy was promoted only after an otherwise-identical, quiet,
+five-run sweep. Every candidate completed 15/15 decode outputs:
+
+| Policy | Code | Prose | Structured ceiling |
+|---|---:|---:|---:|
+| Fixed `k=3` | 38.5 | **22.4** | 43.4 |
+| Fixed `k=5` | 42.5 | 20.7 | 56.1 |
+| Fixed `k=7` | **44.0** | 18.6 | **66.1** |
+| Adaptive `k=3/5` | 41.8 | **22.5** | 54.9 |
+
+The adaptive candidate gained 8.7% completed-prose throughput over fixed
+`k=5` while giving up 1.6% code and 2.1% structured throughput. Against the
+former fixed-`k=7` default, it gained about 21% prose while giving up about 5%
+code. Scheduler telemetry recorded both low and high decisions and 92 state
+transitions, rather than merely accepting an unused configuration flag. The
+[four receipts](../data/rigmark/) retain every output and exact setting.
 
 ## Legacy 512-token checkpoint sweep
 
@@ -57,7 +76,7 @@ published; aggregate values are sufficient for this recipe.
 
 Libert ModelOpt NVFP4 at revision
 `caca4e6a4ebbd66f159d3d2fc256683fd6e27177`, corrected fused-W13 scales,
-native `flashinfer_cutlass`, FP8 KV, and DFlash2 `k=7`:
+native `flashinfer_cutlass`, FP8 KV, and fixed DFlash2 `k=7`:
 
 | Workload | Runs | Decode median | Run range | TTFT median |
 |---|---:|---:|---:|---:|

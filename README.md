@@ -3,7 +3,8 @@
 Serve GLM-5.3-Flash as one OpenAI-compatible TP2 endpoint across two NVIDIA
 DGX Sparks joined by a direct 200 GbE RoCE cable. The reference deployment
 uses the LibertAIDAI ModelOpt NVFP4 checkpoint, FP8 KV, native
-`flashinfer_cutlass` MoE, and the DFlash2 drafter at `k=7`.
+`flashinfer_cutlass` MoE, and an acceptance-guided DFlash2 drafter that selects
+`k=3` or `k=5` per request.
 
 This is the operational recipe we use, including the parts that made it
 survive a real cold boot:
@@ -29,14 +30,14 @@ private addresses, hostnames, or private container references.
 | Drafter revision | `bf582e4eacc1810f76656d1811693ff6c6737d2a` |
 | Tensor parallelism | TP2, one GB10 per node |
 | MoE backend | `flashinfer_cutlass` |
-| Speculation | DFlash2, 7 draft tokens |
+| Speculation | DFlash2, adaptive 3/5-token verification |
 | Context | 262,144 tokens |
 | KV | FP8 E4M3, 4 GiB per rank |
-| Capacity reported by vLLM | 394,488 logical tokens across the service |
+| Capacity reported by vLLM | 427,708 logical tokens across the service |
 | Concurrency | 6 sequences, 8,192 batched tokens |
 | Multimodal | Image input verified; default vLLM limits |
 
-That 394K figure is a safe starting floor, not the target ceiling. It is enough
+That 428K figure is a safe starting floor, not the target ceiling. It is enough
 for one very deep session or two sessions around 180K only narrowly. A 6 GiB
 trial should yield roughly 592K logical tokens, but it must pass the supplied
 long-context and concurrency gates before becoming the default.
@@ -49,18 +50,19 @@ pair, not maxima:
 
 | Workload | Median decode | Observed range |
 |---|---:|---:|
-| Completed code | **44.0 tok/s** | 31.6–47.7 tok/s |
-| Completed prose | **18.9 tok/s** | 17.8–19.3 tok/s |
+| Completed code | **42.6 tok/s** | 39.0–44.7 tok/s |
+| Completed prose | **22.2 tok/s** | 21.8–22.3 tok/s |
+| Valid structured ceiling | **54.6 tok/s** | 53.0–55.7 tok/s |
 
 Cold prefill used a unique marker on every run to prevent prefix-cache reuse:
 
 | Prompt depth | Cold TTFT | Cold effective prefill |
 |---:|---:|---:|
-| 8,192 tokens | 4.519s | **1,813 tok/s** |
-| 32,768 tokens | 17.175s | **1,908 tok/s** |
-| 65,536 tokens | 34.105s | **1,922 tok/s** |
+| 8,192 tokens | 4.465s | **1,835 tok/s** |
+| 32,768 tokens | 17.264s | **1,898 tok/s** |
+| 65,536 tokens | 34.397s | **1,905 tok/s** |
 
-A warm 64K prefix replay reached about 11,363 tok/s. Structured output can be
+A warm 64K prefix replay reached about 11,464 tok/s. Structured output can be
 much faster than prose and must not be presented as an everyday agent speed.
 The complete method and unrounded values are in
 [`docs/benchmarks.md`](docs/benchmarks.md).
@@ -88,7 +90,7 @@ appliance in the sweep:
 ./rigmark run \
   --base-url http://HEAD:8000 \
   --model auto \
-  --label glm53-libert-nvfp4-tp2-low \
+  --label glm53-libert-nvfp4-tp2-adaptive-low \
   --comparison-id YOUR-SWEEP-ID \
   --metadata metadata.json \
   --extra-body '{"chat_template_kwargs":{"reasoning_effort":"low"}}'

@@ -1,0 +1,20 @@
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│  R I G M A R K   //   AGENT WORKLOAD RECEIPT                                             │
+│  BENCHMARKS LOCAL AI THE WAY CODING AGENTS ACTUALLY USE IT                               │
+│  ●  15/15 OUTPUTS COMPLETE                                                               │
+├─ SYSTEM ─────────────────────────────────────────────────────────────────────────────────┤
+│  MODEL      glm-5.3-flash                                                                │
+│  APPLIANCE  2x NVIDIA DGX Spark (GB10)                                                   │
+│  RUN        reasoning=low  •  protocol=1.0.0                                             │
+│  SOURCE     git:9a64cf7839d3  •  clean                                                   │
+├─ REAL OUTPUT ────────────────────────────────────────────────────────────────────────────┤
+│  WORKLOAD                 MEDIAN          OBSERVED RANGE          COMPLETE               │
+│  CODE                  38.5 tok/s       37.5–38.6            ✓ 5/5                       │
+│  PROSE                 22.4 tok/s       22.1–23.0            ✓ 5/5                       │
+│  STRUCTURED*           43.4 tok/s       42.9–43.7            ✓ 5/5                       │
+│  * predictable-output ceiling; not a proxy for agent speed                               │
+├─ PROOF ──────────────────────────────────────────────────────────────────────────────────┤
+│  RECEIPT    sha256:819644a56f3c5127…                                                     │
+│  SHARE THE CARD • LINK THE JSON RECEIPT • #RIGMARK                                       │
+│  github.com/alexellis/rigmark                                                            │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
