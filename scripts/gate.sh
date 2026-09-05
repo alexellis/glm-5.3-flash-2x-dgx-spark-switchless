@@ -34,7 +34,7 @@ def deterministic(messages, **extra):
         "messages": messages,
         "max_tokens": 128,
         "temperature": 0,
-        "chat_template_kwargs": {"enable_thinking": False},
+        "chat_template_kwargs": {"reasoning_effort": "low"},
     }
     payload.update(extra)
     return request(payload)

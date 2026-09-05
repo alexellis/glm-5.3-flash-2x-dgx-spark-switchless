@@ -7,7 +7,9 @@ This recipe integrates work from:
 - incoai for the GLM-5.3-Flash DFlash2 drafter;
 - the vLLM and FlashInfer projects;
 - Tony Dennis and contributors for the DGX Spark SM121 and DFlash2 serving
-  stack; and
+  stack;
+- Jacopo Nardiello for the acceptance-guided adaptive-k scheduler, retained
+  with its upstream Apache-2.0 provenance header; and
 - NVIDIA for DGX Spark, CUDA, and NCCL.
 
 The scripts and documentation authored in this repository are MIT licensed.

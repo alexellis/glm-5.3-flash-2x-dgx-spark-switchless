@@ -27,6 +27,7 @@ MODEL_PATH=/models/glm-5.3-flash-nvfp4
 DRAFT_PATH=/models/dflash2-draft
 PATCH_PATH=/usr/local/lib/python3.12/dist-packages/vllm
 CUDA_LIB_HOST_PATH=/usr/local/cuda/targets/sbsa-linux/lib
+ADAPTIVE_K_HOST_PATH=$(cd -- "$SCRIPT_DIR/../patches" && pwd)/adaptive_k_scheduler.py
 
 test -f "$MODEL_HOST_PATH/config.json"
 test -f "$DRAFT_HOST_PATH/model.safetensors"
@@ -37,6 +38,27 @@ test -f "$RUNTIME_DIR/patches/kernel_warmup.py"
 test -f "$RUNTIME_DIR/templates/chat_template.jinja"
 ip -4 address show dev "$FABRIC_IFACE" | grep -Fq "$HOST_IP/24"
 ping -I "$FABRIC_IFACE" -c 1 -W 2 "$PEER_IP" >/dev/null
+
+ADAPTIVE_DOCKER_ARGS=()
+ADAPTIVE_VLLM_ARGS=()
+SPEC_EXTRA_JSON=""
+if [[ "$ADAPTIVE_K" == "1" ]]; then
+    test -f "$ADAPTIVE_K_HOST_PATH"
+    ADAPTIVE_DOCKER_ARGS=(
+        -v "$ADAPTIVE_K_HOST_PATH:/opt/tp2/adaptive_k_scheduler.py:ro"
+        -e PYTHONPATH=/opt/tp2
+        -e VLLM_ADAPTIVE_K_MODE=per-request
+        -e VLLM_ADAPTIVE_K_SEED=1.0
+        -e VLLM_ADAPTIVE_K_DOWN=0.42
+        -e VLLM_ADAPTIVE_K_UP=0.58
+        -e VLLM_ADAPTIVE_K_ALPHA=0.15
+        -e VLLM_ADAPTIVE_K_SIGNAL=pos
+    )
+    ADAPTIVE_VLLM_ARGS=(
+        --scheduler-cls adaptive_k_scheduler.AdaptiveKScheduler
+    )
+    SPEC_EXTRA_JSON=',"num_speculative_tokens_per_batch_size":[[1,1,5],[2,6,3]]'
+fi
 
 mkdir -p "$RUNTIME_DIR/cache/huggingface" \
     "$RUNTIME_DIR/cache/flashinfer" "$RUNTIME_DIR/cache/vllm"
@@ -84,6 +106,7 @@ docker run --gpus all -d \
     -e NCCL_IB_MERGE_NICS=0 -e NCCL_CUMEM_ENABLE=0 \
     -e NCCL_IGNORE_CPU_AFFINITY=1 -e NCCL_DEBUG=WARN \
     -e TORCH_NCCL_ASYNC_ERROR_HANDLING=1 \
+    "${ADAPTIVE_DOCKER_ARGS[@]}" \
     "$IMAGE" \
     "$MODEL_PATH" \
     --served-model-name glm-5.3-flash \
@@ -94,12 +117,13 @@ docker run --gpus all -d \
     --max-num-seqs 6 --block-size 2304 \
     --moe-backend flashinfer_cutlass \
     --max-num-batched-tokens 8192 \
-    --speculative-config "{\"method\":\"dflash\",\"model\":\"$DRAFT_PATH\",\"num_speculative_tokens\":7}" \
+    --speculative-config "{\"method\":\"dflash\",\"model\":\"$DRAFT_PATH\",\"num_speculative_tokens\":$SPEC_TOKENS$SPEC_EXTRA_JSON}" \
     --kv-cache-dtype fp8_e4m3 --kv-cache-memory "$KV_CACHE_BYTES" \
     --tool-call-parser glm47 --enable-auto-tool-choice \
     --chat-template /models/chat_template.jinja \
     --reasoning-parser deepseek_r1 \
     --default-chat-template-kwargs '{"enable_thinking": true}' \
+    "${ADAPTIVE_VLLM_ARGS[@]}" \
     --distributed-executor-backend mp \
     --nnodes 2 --node-rank "$NODE_RANK" \
     --master-addr "$HEAD_FABRIC_IP" --master-port "$MASTER_PORT" \
