@@ -1,7 +1,7 @@
 # GLM-5.3-Flash on 2× DGX Spark
 
 Serve GLM-5.3-Flash as one OpenAI-compatible TP2 endpoint across two NVIDIA
-DGX Sparks joined by a direct 100 GbE RoCE cable. The reference deployment
+DGX Sparks joined by a direct 200 GbE RoCE cable. The reference deployment
 uses the LibertAIDAI ModelOpt NVFP4 checkpoint, FP8 KV, native
 `flashinfer_cutlass` MoE, and the DFlash2 drafter at `k=7`.
 

@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "date": "2026-09-04",
-  "topology": "TP2 direct 100GbE RoCE",
+  "topology": "TP2 direct 200GbE RoCE",
   "model": "LibertAIDAI/GLM-5.3-Flash-NVFP4",
   "model_revision": "caca4e6a4ebbd66f159d3d2fc256683fd6e27177",
   "drafter": "incoai/GLM-5.3-Flash-DFlash2",

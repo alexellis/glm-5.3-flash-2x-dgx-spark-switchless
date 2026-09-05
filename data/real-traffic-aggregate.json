@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "model": "glm-5.3-flash",
-  "topology_annotation": "TP2 direct 100GbE RoCE",
+  "topology_annotation": "TP2 direct 200GbE RoCE",
   "annotation_caveat": "The gateway stores model ID, not topology or checkpoint. The serving window was mapped from the operational change log.",
   "privacy": "Aggregate only; no prompts, users, sessions, endpoints, or raw rows.",
   "requests": 429,
