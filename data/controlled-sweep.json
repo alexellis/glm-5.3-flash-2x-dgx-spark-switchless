@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "date": "2026-09-04",
+  "topology": "TP2 direct 100GbE RoCE",
+  "model": "LibertAIDAI/GLM-5.3-Flash-NVFP4",
+  "model_revision": "caca4e6a4ebbd66f159d3d2fc256683fd6e27177",
+  "drafter": "incoai/GLM-5.3-Flash-DFlash2",
+  "drafter_revision": "bf582e4eacc1810f76656d1811693ff6c6737d2a",
+  "runs_per_decode_workload": 5,
+  "measurements": {
+    "code_decode_median_tokens_per_second": 28.812,
+    "prose_decode_median_tokens_per_second": 22.919,
+    "cold_prefill_8192_tokens_per_second": 1832.7,
+    "cold_prefill_32768_tokens_per_second": 1921.1,
+    "cold_prefill_65536_tokens_per_second": 1924.6,
+    "warm_replay_65536_tokens_per_second": 11395.4
+  }
+}

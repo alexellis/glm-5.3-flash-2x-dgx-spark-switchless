@@ -1,0 +1,17 @@
+.env
+*.local
+*.log
+*.sqlite*
+*.db
+*.sql
+*.jsonl
+*.pem
+*.key
+*token*
+runtime/
+crashes/
+weights/
+models/
+cache/
+__pycache__/
+*.pyc

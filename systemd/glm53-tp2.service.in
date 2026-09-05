@@ -1,0 +1,20 @@
+[Unit]
+Description=GLM-5.3-Flash NVFP4 DFlash2 TP2
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=@RUN_USER@
+Group=@RUN_GROUP@
+WorkingDirectory=/opt/glm53-tp2
+ExecStart=/opt/glm53-tp2/scripts/pair.sh run
+ExecStopPost=/opt/glm53-tp2/scripts/pair.sh stop
+Restart=on-failure
+RestartSec=60
+TimeoutStopSec=10min
+
+[Install]
+WantedBy=multi-user.target
