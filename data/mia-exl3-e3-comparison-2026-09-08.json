@@ -1,0 +1,89 @@
+{
+  "schema": "glm53-tp2-comparison/v1",
+  "collected_at": "2026-09-08",
+  "comparison": "Libert NVFP4 TP2 versus Mia EXL3 E3 TP2",
+  "reference_repository": {
+    "commit": "497363d927fde345becdc212ec32b8a4e2e430eb",
+    "dirty": true,
+    "modified_paths": [
+      "scripts/pair.sh",
+      "scripts/prepare-runtime.sh"
+    ]
+  },
+  "upstream": {
+    "repository": "https://github.com/MiaAI-Lab/GLM-5.3-Flash-EXL3-2x-DGX-Sparks",
+    "commit": "6599585dd5ab0b5f1f68e84914f48825727ad1b3",
+    "chat_template_sha256": "3050de3f995e0ae8a612f411c01621d65822ddd10f7ef6e0fb7c23bdb4a18523"
+  },
+  "adapter": {
+    "reason": "The production server refuses untrusted request templates. The pinned Mia template was rendered locally and submitted through the equivalent completions endpoint.",
+    "decode_sha256": "99da6bd125032dcb3d081f48abcbd1596b45f7f72355354996e9eda889f68b9d",
+    "cold_prefill_sha256": "c3a72c132acdeb06fbb0a96761436fdd5772cf607cd1bcc24f8cfe1da7429fad"
+  },
+  "runtime": {
+    "model": "LibertAIDAI/GLM-5.3-Flash-NVFP4",
+    "model_revision": "caca4e6a4ebbd66f159d3d2fc256683fd6e27177",
+    "tensor_parallel_size": 2,
+    "kv": "FP8 E4M3",
+    "dflash2": "adaptive k=3/5",
+    "max_model_len": 262144,
+    "vllm_fingerprint": "vllm-0.1.dev20051+g487ecf187-tp2-5e14ed46",
+    "image_id": "sha256:543686f2abf313df96db59e1ed6940566460ebec7d1fb7803fa3547f38ad3595",
+    "rank_launcher_sha256": "543f813b3cf936b65476a2fc477e514d5b2e0da002a1bbc947d27952e4b82acd",
+    "pair_sha256": "d1559bc90e834d32dc82c7373cb5766c2ebba242bb15921b07d7b032086a1580",
+    "deployed_chat_template_sha256": "0c4099f3382d6c92700dfb99725025360966fd73032f0ecf32377c0d9e6309c5"
+  },
+  "protocol": {
+    "temperature": 0,
+    "thinking": false,
+    "decode_streams": 1,
+    "decode_max_tokens": 400,
+    "cold_prefill_unique_salt": true,
+    "cold_prefill_cache_hit_tokens": 0
+  },
+  "nvfp4": {
+    "decode": {
+      "prose": {
+        "prompt": "Mia hash-map prose",
+        "runs": 5,
+        "median_tok_s": 33.16434040323383,
+        "min_tok_s": 31.34869148939748,
+        "max_tok_s": 38.06410663389874,
+        "median_ttft_s": 0.31735719135031104,
+        "median_accept_ratio": 0.5519,
+        "median_accepted_per_step": 2.046
+      },
+      "structured": {
+        "prompt": "Count from 1 to 200. Output only the numbers, separated by spaces. No other text.",
+        "runs": 5,
+        "median_tok_s": 58.84451248308363,
+        "min_tok_s": 57.969353887508454,
+        "max_tok_s": 59.28576788684562,
+        "median_ttft_s": 0.302574775647372,
+        "median_accept_ratio": 0.994,
+        "median_accepted_per_step": 4.97
+      }
+    },
+    "cold_prefill": [
+      {"prompt_tokens": 8001, "ttft_s": 4.372561249881983, "tok_s": 1829.819993994584},
+      {"prompt_tokens": 12001, "ttft_s": 6.435014970134944, "tok_s": 1864.952926402957},
+      {"prompt_tokens": 16001, "ttft_s": 8.425712333992124, "tok_s": 1899.0679203996376},
+      {"prompt_tokens": 100001, "ttft_s": 51.557776608970016, "tok_s": 1939.5910098769045},
+      {"prompt_tokens": 256001, "ttft_s": 138.18479411303997, "tok_s": 1852.5989175812085},
+      {"prompt_tokens": 300001, "error": "HTTP 400: exceeds max_model_len", "included": false}
+    ]
+  },
+  "mia_published": {
+    "decode": {
+      "prose_tok_s": 27.1,
+      "structured_tok_s": 65.1
+    },
+    "cold_prefill": [
+      {"prompt_tokens": 8221, "ttft_s": 5.51, "tok_s": 1492.1},
+      {"prompt_tokens": 16411, "ttft_s": 10.56, "tok_s": 1553.7},
+      {"prompt_tokens": 262173, "ttft_s": 172.84, "tok_s": 1516.8}
+    ],
+    "default_context_tokens": 850000,
+    "dflash2": "fixed k=7"
+  }
+}

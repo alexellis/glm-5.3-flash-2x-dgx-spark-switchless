@@ -67,6 +67,36 @@ much faster than prose and must not be presented as an everyday agent speed.
 The complete method and unrounded values are in
 [`docs/benchmarks.md`](docs/benchmarks.md).
 
+### Like-for-like with Mia EXL3 E3
+
+On 8 September 2026, we ran Mia's current decode prompts and cold-prefill
+protocol against this NVFP4 recipe. The comparison used Mia's corrected chat
+template, temperature zero, thinking disabled, one decode stream, 400 output
+tokens, and a unique salt for every cold prompt. Cache metrics confirmed that
+every reported cold token was computed locally with zero prefix-cache hits.
+
+| Same TP2 workload | This recipe: Libert NVFP4 | Mia EXL3 E3 | Result |
+|---|---:|---:|---:|
+| Prose decode | **33.16 tok/s** | 27.1 tok/s | **NVFP4 +22%** |
+| Structured decode | 58.84 tok/s | **65.1 tok/s** | EXL3 +11% |
+| Cold prefill, ~8K | **1,830 tok/s** (4.37s) | 1,492 tok/s (5.51s) | **NVFP4 +23%** |
+| Cold prefill, ~16K | **1,899 tok/s** (8.43s) | 1,554 tok/s (10.56s) | **NVFP4 +22%** |
+| Cold prefill, ~256K | **1,853 tok/s** (138.18s) | 1,517 tok/s (172.84s) | **NVFP4 +22%** |
+| Default context | 262,144 tokens | **850,000 tokens** | EXL3 |
+
+**Structured decode is not an agent workload.** The prompt is literally
+"Count from 1 to 200. Output only the numbers, separated by spaces." It is a
+useful ceiling for speculative acceptance because the next token is unusually
+predictable, but it has little practical value and must not be quoted as coding,
+prose, or everyday agent speed. The hash-map prose row is the more relevant
+decode comparison: this NVFP4 recipe is about 22% faster there and about 22%
+faster across the matched cold-prefill depths. EXL3's material advantage is its
+larger default context; its fixed seven-token draft also helps its counting
+ceiling against this recipe's adaptive three/five-token policy.
+
+See the [full method and provenance](docs/benchmarks.md#like-for-like-mia-exl3-e3-comparison)
+and the [machine-readable receipt](data/mia-exl3-e3-comparison-2026-09-08.json).
+
 The evidence now includes 429 HTTP-2xx real-traffic rows carrying 43.1M prompt
 tokens, contexts up to 207,940 tokens, median 25.2 tok/s across outputs of at
 least 50 tokens, four client-interrupted streams, and no recorded repetition

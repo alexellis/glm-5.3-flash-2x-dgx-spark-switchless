@@ -119,6 +119,56 @@ The selected checkpoint was not chosen from a counting prompt. It won both
 realistic decode shapes, every cold-prefill depth, both meaningful warm
 replays, and the end-to-end agent task after applying the correctness patch.
 
+## Like-for-like Mia EXL3 E3 comparison
+
+We repeated the public Mia EXL3 decode and cold-prefill workloads on 8 September
+2026 against the selected Libert NVFP4 deployment. The upstream comparison was
+pinned to Mia commit `6599585dd5ab0b5f1f68e84914f48825727ad1b3`.
+
+| Same TP2 workload | Libert NVFP4 | Mia EXL3 E3 | Difference |
+|---|---:|---:|---:|
+| Prose decode, median of five | **33.164** | 27.1 | **NVFP4 +22.4%** |
+| Structured decode, median of five | 58.845 | **65.1** | EXL3 +10.6% |
+| Cold prefill, 8,001 tokens | **1,829.8** | 1,492.1 | **NVFP4 +22.6%** |
+| Cold prefill, 16,001 tokens | **1,899.1** | 1,553.7 | **NVFP4 +22.2%** |
+| Cold prefill, 256,001 tokens | **1,852.6** | 1,516.8 | **NVFP4 +22.1%** |
+
+Decode used Mia's exact prompts, corrected chat template, temperature zero,
+thinking disabled, one stream, and a 400-token ceiling. The NVFP4 prose range
+was 31.349–38.064 tok/s with median TTFT 0.317s. Its structured range was
+57.969–59.286 tok/s with median TTFT 0.303s and 99.4% median draft acceptance.
+
+The structured prompt is exactly:
+
+> Count from 1 to 200. Output only the numbers, separated by spaces. No other
+> text.
+
+This is a deliberately predictable speculative-decode ceiling, not useful
+work. It says how quickly a drafter can continue an obvious sequence. It does
+not measure code generation, tool use, reasoning, prose, or an agent changing a
+repository. Do not present it as the model's practical speed.
+
+Cold prefill used Mia's filler, calibration, streaming TTFT calculation, and a
+fresh random salt per request. vLLM metrics recorded zero cache-hit tokens and
+the full prompt-token count as local compute for every included rung. The
+300,001-token rung was correctly rejected because this profile serves a
+262,144-token context, so it is retained in the receipt but excluded from the
+comparison table.
+
+The production server deliberately refuses untrusted per-request chat
+templates. For the comparison, the pinned Mia template was rendered locally
+with `enable_thinking=false`, and its resulting prompt was submitted through
+the completions endpoint. This supplies the same model input without weakening
+the running server or changing any model-side setting. The only intended
+differences are the recipes under comparison: Mia uses EXL3/TR3 4 bpw, FP8 KV,
+and fixed DFlash2 `k=7`; this deployment uses Libert ModelOpt NVFP4, FP8 KV,
+and adaptive DFlash2 `k=3/5`.
+
+The machine-readable receipt records the benchmark checkout, dirty state,
+adapter and template hashes, deployed runtime hashes, unrounded observations,
+and upstream source values:
+[`data/mia-exl3-e3-comparison-2026-09-08.json`](../data/mia-exl3-e3-comparison-2026-09-08.json).
+
 ## Identical OpenCode task
 
 The same repository, context, question, and OpenCode workflow were used before
