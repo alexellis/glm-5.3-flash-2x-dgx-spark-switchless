@@ -1,0 +1,156 @@
+{
+  "label": "adaptive-k2-k4-k7",
+  "model": "glm-5.3-flash",
+  "prefill": {
+    "32768": {
+      "cold": {
+        "effective_prefill_tok_s": 1907.2,
+        "prompt_tokens": 32768,
+        "ttft_s": 17.1809
+      },
+      "warm_replay": {
+        "effective_prefill_tok_s": 11006.5,
+        "prompt_tokens": 32768,
+        "ttft_s": 2.9772
+      }
+    },
+    "65536": {
+      "cold": {
+        "effective_prefill_tok_s": 1914.3,
+        "prompt_tokens": 65536,
+        "ttft_s": 34.2342
+      },
+      "warm_replay": {
+        "effective_prefill_tok_s": 11381.7,
+        "prompt_tokens": 65536,
+        "ttft_s": 5.758
+      }
+    },
+    "8192": {
+      "cold": {
+        "effective_prefill_tok_s": 1847.7,
+        "prompt_tokens": 8192,
+        "ttft_s": 4.4337
+      },
+      "warm_replay": {
+        "effective_prefill_tok_s": 1817.4,
+        "prompt_tokens": 8192,
+        "ttft_s": 4.5075
+      }
+    }
+  },
+  "workloads": {
+    "code": {
+      "median_decode_tok_s": 28.836,
+      "median_ttft_s": 0.413,
+      "runs": [
+        {
+          "completion_tokens": 512,
+          "decode_tok_s": 30.391,
+          "finish_reason": "length",
+          "prompt_tokens": 119,
+          "response_preview": "The user wants a production-quality Go package implementing a keyed, concurrency-safe token-bucket rate limiter. Requirements:  1. API design 2. Implementation 3. Table-driven tests using a fake clock 4. Idle-key eviction 5. Concise explanation of invariants and race-safety 6. Code that could be copied into a repository  Let me design this carefully.  **Package layout**: A single package `ratelimit` (or `tokenbucket`). I'll present it as a single file `ratelimit.go` plus `ratelimit_test.go`, may",
+          "response_sha256": "88145db3f497f6b902fda0887f0fa01073102b5c22f2e4f0dca330137b845cb9",
+          "ttft_s": 0.4187,
+          "wall_s": 17.2328
+        },
+        {
+          "completion_tokens": 512,
+          "decode_tok_s": 28.836,
+          "finish_reason": "length",
+          "prompt_tokens": 117,
+          "response_preview": "The user wants a production-quality Go package implementing a keyed, concurrency-safe token-bucket rate limiter. Requirements:  1. API design 2. Implementation 3. Table-driven tests using a fake clock 4. Idle-key eviction 5. Concise explanation of invariants and race-safety 6. Code that could be copied into a repository  Let me design this carefully.  **Package layout:**  ``` ratelimit/   ratelimit.go       // public API + implementation   ratelimit_test.go  // table-driven tests with fake clock",
+          "response_sha256": "fb47f9848c1d36f93962a0122fdcff59d60c13d0ab368f6d68ed97b94646d93b",
+          "ttft_s": 0.4129,
+          "wall_s": 18.134
+        },
+        {
+          "completion_tokens": 512,
+          "decode_tok_s": 27.904,
+          "finish_reason": "length",
+          "prompt_tokens": 117,
+          "response_preview": "The user wants a production-quality Go package implementing a keyed, concurrency-safe token-bucket rate limiter. Requirements:  1. API design 2. Implementation 3. Table-driven tests using a fake clock 4. Idle-key eviction 5. Concise explanation of invariants and race-safety 6. Code that could be copied into a repository  Let me design this carefully.  **Package layout**: A single package `ratelimit` (or `tokenbucket`). I'll present it as a single file for the implementation plus a test file, may",
+          "response_sha256": "5d912e192e7187196de51c250bc5e268c8901e72da6d5cbca36932e1dc5803bd",
+          "ttft_s": 0.3783,
+          "wall_s": 18.6913
+        },
+        {
+          "completion_tokens": 512,
+          "decode_tok_s": 31.898,
+          "finish_reason": "length",
+          "prompt_tokens": 120,
+          "response_preview": "The user wants a production-quality Go package implementing a keyed, concurrency-safe token-bucket rate limiter. Requirements:  1. API design 2. Implementation 3. Table-driven tests using a fake clock 4. Idle-key eviction 5. Concise explanation of invariants and race-safety 6. Code that could be copied into a repository  Let me design this carefully.  **Package layout:**  ``` ratelimit/   ratelimit.go       \u2014 implementation   ratelimit_test.go  \u2014 tests   clock.go           \u2014 clock abstraction (o",
+          "response_sha256": "f72710ca2bf3fa04305a6ec311afb66bd823fe8be211e3c93b8c5636ef98bafc",
+          "ttft_s": 0.4454,
+          "wall_s": 16.4653
+        },
+        {
+          "completion_tokens": 512,
+          "decode_tok_s": 28.673,
+          "finish_reason": "length",
+          "prompt_tokens": 119,
+          "response_preview": "The user wants a production-quality Go package implementing a keyed, concurrency-safe token-bucket rate limiter. Requirements:  1. API design 2. Implementation 3. Table-driven tests using a fake clock 4. Idle-key eviction 5. Concise explanation of invariants and race-safety 6. Code that could be copied into a repository  Let me design this carefully.  **Package layout:**  ``` ratelimit/   ratelimit.go       \u2014 public API + implementation   ratelimit_test.go  \u2014 table-driven tests with fake clock  ",
+          "response_sha256": "2b292793ee3a29859f5e9609b7d0bf6b93cc82bcf4a0fc657c2c2d99a02c001f",
+          "ttft_s": 0.3867,
+          "wall_s": 18.2084
+        }
+      ]
+    },
+    "prose": {
+      "median_decode_tok_s": 27.944,
+      "median_ttft_s": 0.438,
+      "runs": [
+        {
+          "completion_tokens": 512,
+          "decode_tok_s": 27.944,
+          "finish_reason": "length",
+          "prompt_tokens": 121,
+          "response_preview": "The user wants an internal engineering memo, roughly 700 words, about a small team deciding whether to buy more local AI hardware or improve utilisation of what it owns. It should weave in cost, latency, reliability, opportunity cost, and reversibility into natural prose. Clear recommendation, acknowledge uncertainty, avoid lists.  The instruction says \"Do not mention benchmarking or the nonce.\" So I must not mention the request nonce (obviously) and must not mention benchmarking. Interesting \u2014 ",
+          "response_sha256": "959f6fa2ce5c49c222c1664725547b354ac0ff5000cca0e71f62df276c9d9bef",
+          "ttft_s": 0.456,
+          "wall_s": 18.7426
+        },
+        {
+          "completion_tokens": 512,
+          "decode_tok_s": 25.885,
+          "finish_reason": "length",
+          "prompt_tokens": 125,
+          "response_preview": "The user wants an internal engineering memo, roughly 700 words, about a small team deciding whether to buy more local AI hardware or improve utilization of what it owns. It should weave in cost, latency, reliability, opportunity cost, and reversibility into natural prose. Clear recommendation, acknowledge uncertainty, avoid lists. Also, the system prompt says not to mention benchmarking or the nonce. So I must not mention \"benchmark\" anywhere, and not mention the request nonce.  Let me think abo",
+          "response_sha256": "2011d50adb2a83d79f0d77403152aad24a1d3bdbedfa2762e7a6cb74ad3a52a2",
+          "ttft_s": 0.4379,
+          "wall_s": 20.1792
+        },
+        {
+          "completion_tokens": 512,
+          "decode_tok_s": 26.768,
+          "finish_reason": "length",
+          "prompt_tokens": 123,
+          "response_preview": "The user wants an internal engineering memo, roughly 700 words, about a small team deciding whether to buy more local AI hardware or improve utilisation of what they already own. The memo should weave in cost, latency, reliability, opportunity cost, and reversibility as natural prose \u2014 not as a bulleted list. It needs a clear recommendation, acknowledgment of uncertainty, and no lists.  Let me think about the scenario. A small team \u2014 maybe an ML platform team at a mid-size company \u2014 owns some lo",
+          "response_sha256": "897472e040dbdef39bfc42eff3b0937b395bfeff4d01da11b4719ad577a9a98c",
+          "ttft_s": 0.3895,
+          "wall_s": 19.4794
+        },
+        {
+          "completion_tokens": 512,
+          "decode_tok_s": 31.116,
+          "finish_reason": "length",
+          "prompt_tokens": 120,
+          "response_preview": "The user wants an internal engineering memo, roughly 700 words, about a small team deciding whether to buy more local AI hardware or improve utilization of what it owns. The memo should weave in cost, latency, reliability, opportunity cost, and reversibility into natural prose. It should make a clear recommendation, acknowledge uncertainty, and avoid lists.  Key constraints: - ~700 words - Internal engineering memo format (but no lists \u2014 so prose paragraphs, maybe with a subject line and headers",
+          "response_sha256": "2addc87d85a7f0ebbbf34c1916a02bc06c07c38bb66da1723a5cd97d0918d9aa",
+          "ttft_s": 0.4693,
+          "wall_s": 16.8917
+        },
+        {
+          "completion_tokens": 512,
+          "decode_tok_s": 29.393,
+          "finish_reason": "length",
+          "prompt_tokens": 121,
+          "response_preview": "The user wants an internal engineering memo, roughly 700 words, about a small team deciding whether to buy more local AI hardware or improve utilization of what it owns. They want cost, latency, reliability, opportunity cost, and reversibility woven into natural prose. Clear recommendation, acknowledge uncertainty, avoid lists. Also there's a system prompt saying not to mention benchmarking or the nonce. The \"Request nonce\" is just a string in the user message \u2014 I should ignore it and not mentio",
+          "response_sha256": "9e2fe4434f90d6ec8bb41acaaa77d0b737deb7219705f86c0e6b30c9701617c6",
+          "ttft_s": 0.396,
+          "wall_s": 17.7812
+        }
+      ]
+    }
+  }
+}

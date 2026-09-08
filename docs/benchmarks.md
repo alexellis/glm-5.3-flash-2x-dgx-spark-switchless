@@ -18,21 +18,70 @@ or reasoning-only results. Native `reasoning_effort=low` produced:
 
 | Workload | Runs | Decode median | Run range | Gate |
 |---|---:|---:|---:|---:|
-| Code | 5 | **42.575 tok/s** | 38.978–44.704 | 5/5 |
-| Prose | 5 | **22.162 tok/s** | 21.831–22.283 | 5/5 |
-| Structured ceiling | 5 | **54.623 tok/s** | 52.956–55.722 | 5/5 |
+| Code | 5 | **44.282 tok/s** | 42.415–45.763 | 5/5 |
+| Prose | 5 | **22.647 tok/s** | 22.453–22.888 | 5/5 |
+| Structured ceiling | 5 | **66.475 tok/s** | 64.471–69.136 | 5/5 |
 
-This is the selected acceptance-guided DFlash2 policy. It begins at `k=5` and
-uses a per-request EMA to drop low-acceptance output to `k=3`. The same endpoint
-passed text, tool-call, 80,032-token retrieval, and image gates.
+The current recipe starts at `k=7`, then selects `k=2`, `k=4`, or
+`k=7` from a per-request EMA of accepted prefix length. All requests stay at
+`k=7` for four observations, structured output stays at `k=7`, and each batch
+uses a uniform verification length so that it remains on a captured CUDA graph.
 
-The [complete JSON receipt](../data/rigmark/adaptive-k3-k5-full.json) records a
-clean RigMark `d8353e9` worktree and TP2 recipe `6163f2e`. It measured cold 64K
-prefill at **1,905 tok/s**, warm 64K replay at **11,464 tok/s**, and short-code
-aggregate throughput of **31.2**, **42.8**, and **61.1 tok/s** at concurrency
-one, two, and four. These aggregate
+The [complete JSON receipt](../data/rigmark/adaptive-k2-k4-k7.json) records a
+clean RigMark `c671b52` worktree and the exact dirty recipe base and runtime
+diff hashes. A separate three-round
+[concurrency receipt](../data/rigmark/adaptive-k2-k4-k7-concurrency.json)
+measured short-code aggregate throughput of **49.1** and **64.6 tok/s** at
+concurrency two and four. These aggregate
 figures include the whole request and use a 256-token cap; they are not prose
 decode rates.
+
+### Adaptive-policy A/B
+
+The current 2/4/7 result and previous 3/5 result used the same RigMark protocol,
+reasoning effort, prompts, token ceiling, and five-run decode count:
+
+| Workload | Adaptive 3/5 | Adaptive 2/4/7 | Change |
+|---|---:|---:|---:|
+| Completed code | 42.575 | **44.282** | **+4.0%** |
+| Completed prose | 22.162 | **22.647** | **+2.2%** |
+| Structured ceiling | 54.623 | **66.475** | **+21.7%** |
+| C2 short-code aggregate | 42.765 | **49.066** | **+14.7%** |
+| C4 short-code aggregate | 61.109 | **64.597** | **+5.7%** |
+
+The result is prompt-sensitive. On Mia's shorter hash-map prose prompt, an
+immediate five-run control moved from **32.187** to **30.937 tok/s** (-3.9%).
+The realistic completed-output gains are therefore modest, not Mia's advertised
+29% prose uplift for EXL3. The seven-token engine also reduces the logical KV
+pool from 427,708 to 394,488 tokens (-7.8%). We accept that trade for stronger
+code, concurrency, and predictable-output throughput, while retaining the 3/5
+receipt as a viable higher-capacity alternative.
+
+### KV expansion gate
+
+The runtime default was subsequently raised from 4 to **4.5 GiB per rank**.
+Both ranks independently reported the same reservation and vLLM exposed
+**442,845 logical tokens** service-wide, up from 394,488 (+12.3%). A first
+one-sided trial correctly produced no capacity gain; this found and fixed a
+recipe defect by requiring byte-identical configuration files on both ranks.
+
+The promoted setting passed:
+
+- the standard text, tool-call, 80,032-token retrieval, and image gates;
+- a cache-cold 256,001-token request in 138.438 seconds (**1,849 tok/s**); and
+- two simultaneous, independently salted 180,001-token requests, with first
+  tokens at 95.310 and 190.409 seconds.
+
+vLLM metrics attributed all **616,003** prompt tokens across the deep tests to
+local compute and zero to prefix-cache hits. Sampled available-memory floors
+were 2.83 GiB on the head and 5.04 GiB on the worker. The NVIDIA driver emitted
+recoverable `NV_ERR_NO_MEMORY` allocation-probe messages during initialisation;
+the earlier 4 GiB baseline emitted the same messages, no Xid or process OOM
+occurred, and every request completed. We therefore stop at 4.5 GiB rather than
+promoting the estimated 5 GiB capacity. The
+[machine-readable receipt](../data/kv-cache-4_5g-validation-2026-09-08.json)
+retains the unrounded timings, memory samples, kernel-audit counts, repository
+revision, and dirty-worktree hash.
 
 ### Speculative-depth sweep
 
@@ -162,7 +211,7 @@ the completions endpoint. This supplies the same model input without weakening
 the running server or changing any model-side setting. The only intended
 differences are the recipes under comparison: Mia uses EXL3/TR3 4 bpw, FP8 KV,
 and fixed DFlash2 `k=7`; this deployment uses Libert ModelOpt NVFP4, FP8 KV,
-and adaptive DFlash2 `k=3/5`.
+and the then-current adaptive DFlash2 `k=3/5` policy.
 
 The machine-readable receipt records the benchmark checkout, dirty state,
 adapter and template hashes, deployed runtime hashes, unrounded observations,

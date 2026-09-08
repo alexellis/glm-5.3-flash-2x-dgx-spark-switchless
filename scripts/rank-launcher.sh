@@ -79,17 +79,19 @@ if [[ "$ADAPTIVE_K" == "1" ]]; then
     ADAPTIVE_DOCKER_ARGS=(
         -v "$ADAPTIVE_K_HOST_PATH:/opt/tp2/adaptive_k_scheduler.py:ro"
         -e PYTHONPATH=/opt/tp2
-        -e VLLM_ADAPTIVE_K_MODE=per-request
-        -e VLLM_ADAPTIVE_K_SEED=1.0
-        -e VLLM_ADAPTIVE_K_DOWN=0.42
-        -e VLLM_ADAPTIVE_K_UP=0.58
-        -e VLLM_ADAPTIVE_K_ALPHA=0.15
-        -e VLLM_ADAPTIVE_K_SIGNAL=pos
+        -e VLLM_ADAPTIVE_K_SET=2,4,7
+        -e VLLM_ADAPTIVE_K_ALPHA=0.25
+        -e VLLM_ADAPTIVE_K_MARGIN=1.0
+        -e VLLM_ADAPTIVE_K_MIN_STEPS=4
+        -e VLLM_ADAPTIVE_K_SATURATE=max
+        -e VLLM_ADAPTIVE_K_MODE=batch-uniform
     )
     ADAPTIVE_VLLM_ARGS=(
         --scheduler-cls adaptive_k_scheduler.AdaptiveKScheduler
     )
-    SPEC_EXTRA_JSON=',"num_speculative_tokens_per_batch_size":[[1,1,5],[2,6,3]]'
+    # The table captures FULL CUDA graphs for all three verification lengths.
+    # The scheduler then overrides its batch-size choice with the live EMA.
+    SPEC_EXTRA_JSON=',"num_speculative_tokens_per_batch_size":[[1,1,7],[2,2,4],[3,6,2]]'
 fi
 
 mkdir -p "$RUNTIME_DIR/cache/huggingface" \

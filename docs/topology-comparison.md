@@ -8,18 +8,18 @@ context window, and harness differ.
 | Measurement | Our TP2 | Our TP4 | JSpark3 TP3 |
 |---|---:|---:|---:|
 | Checkpoint format | ModelOpt NVFP4 | Red Hat W4A4 NVFP4 | EXL3/TR3 4 bpw |
-| Speculation | DFlash2 adaptive k=3/5 | DFlash2 k=7 | DFlash2 |
+| Speculation | DFlash2 adaptive k=2/4/7 | DFlash2 k=7 | DFlash2 |
 | Configured context | 262K | 262K | 1M |
-| Code decode | **42.6** | not measured | **66.3** |
-| Prose decode | **22.2** | **37.6–40.6** | **29.0** |
-| Structured decode | **54.6** | not measured | **82.0** |
-| Cold prefill, 8K | **1,835** | **1,881–2,233** | not published at 8K |
-| Cold prefill, 32K | **1,898** | **2,278–2,288** | not published at 32K |
-| Cold prefill, 64K | **1,905** | **2,263–2,273** | not published at 64K |
+| Code decode | **44.3** | not measured | **66.3** |
+| Prose decode | **22.6** | **37.6–40.6** | **29.0** |
+| Structured decode | **66.5** | not measured | **82.0** |
+| Cold prefill, 8K | **1,848** | **1,881–2,233** | not published at 8K |
+| Cold prefill, 32K | **1,907** | **2,278–2,288** | not published at 32K |
+| Cold prefill, 64K | **1,914** | **2,263–2,273** | not published at 64K |
 | Cold prefill, 114K | not measured | ~2,240 at 128K | **1,234** |
-| Warm replay, 32K | **11,339** | **15,150–15,430** | not comparable |
+| Warm replay, 32K | **11,007** | **15,150–15,430** | not comparable |
 | Code-like TTFT | **0.602s** at a shallow prompt | not measured | **0.391s** clamp-code |
-| Four-stream aggregate | **61.1** short code-load | not measured under the controlled harness | **251** |
+| Four-stream aggregate | **64.6** short code-load | not measured under the controlled harness | **251** |
 
 Rates are tokens/second. A range in our TP4 column is the baseline/restored
 pair of sweeps, not run-to-run cherry-picking.
@@ -28,9 +28,9 @@ pair of sweeps, not run-to-run cherry-picking.
 
 Using each topology's retained controlled harness:
 
-- TP4 prose was 1.69–1.83× TP2 completed prose;
-- TP4 cold 32K prefill was 1.19× TP2; and
-- TP4 warm 32K replay was 1.34–1.36× TP2.
+- TP4 prose was 1.66–1.80× TP2 completed prose;
+- TP4 cold 32K prefill was 1.19–1.20× TP2; and
+- TP4 warm 32K replay was 1.38–1.40× TP2.
 
 The decode gain is much larger than the cold-prefill gain. That is consistent
 with GLM benefiting from four-way weight and expert distribution while prompt

@@ -12,7 +12,7 @@ often accepts a longer prefix than free-form prose, while every extra verified
 position touches more experts. A single fixed length therefore trades throughput
 between workloads. This scheduler makes the verification length a property of the
 request and keeps the engine's fused draft pass unchanged. The public design and
-current results are in docs/production-recipe.md and docs/bench.md.
+current results are in ``docs/benchmarks.md``.
 
 How (design summary in docs/production-recipe.md)
 -------------------------------------------------
@@ -32,39 +32,36 @@ base has handed out its placeholders, it replaces them per request with
 than what the engine drafts (``self.num_spec_tokens``). The decision lives in
 the single engine-core process, so it is identical on every TP rank.
 
-Signal (default ``pos``): the indicator "at least the first ``k_lo`` drafts
-were accepted", i.e. the marginal P(position k_lo accepted) — measured on
-2026-09-04 as prose 0.39-0.48, code 0.56-0.65, structured 0.89. Positions
-1..k_lo are drafted at every k, so the estimate is unbiased across k. The
-older ``mean`` signal (``min(accepted, k_lo) / k_lo``) averages the first three
-marginals and reads 0.57-0.67 on prose (0.77/0.54/0.39, 0.86/0.66/0.48), too
-close to structured to separate them; it stays selectable. The signal is read
-in ``update_from_output`` BEFORE the base runs (it truncates the sampled lists
-in place on stop, scheduler.py:2135, and frees finished requests) and folded
-into a per-request EMA (``alpha`` 0.15: a Bernoulli per step needs a slow EMA;
-time to switch ≈ 1/alpha ≈ 7 verify steps; EMA std ≈ sqrt(alpha/(2-alpha)) ·
-sqrt(p(1-p)) ≈ 0.14) with hysteresis between ``down`` 0.42 and ``up`` 0.58,
-about one std wide. Two modes:
+Signal: a per-request EMA of the accepted-prefix length. The drafter still
+produces seven tokens, while the verifier chooses 2, 4, or 7. A fully accepted
+short prefix is recorded as seven so the policy can climb back up instead of
+ratcheting down. New requests run four full-length observations before they
+may be shortened. This policy was introduced by MiaAI-Lab; the surrounding
+async observation and placeholder plumbing remains Jacopo Nardiello's more
+conservative implementation. Two modes:
 
-* ``per-request``: each request gets its own k. A step that mixes k_lo and
-  k_hi requests is non-uniform, so the target model runs the PIECEWISE CUDA
+* ``per-request``: each request gets its own k. A step that mixes lengths is
+  non-uniform, so the target model runs the PIECEWISE CUDA
   graph on that step (FULL decode graphs need a uniform per-request token
   count, gpu/cudagraph_utils.py:89-93, worker/utils.py:671-676).
-* ``batch-uniform``: one k per step; ``k_hi`` only if every request that gets
-  placeholders is in the high state, else ``k_lo``. Every step is uniform.
+* ``batch-uniform``: one k per step. An uncalibrated or structured-output
+  request pins the step to seven; otherwise the minimum request choice wins.
+  Every step is uniform.
 
 CUDA graphs and the dynamic-SD table: by default only ``num_speculative_tokens
 + 1`` tokens per request is captured as a FULL decode graph
-(gpu/cudagraph_utils.py:219, 242-258), so a uniform k_lo step would run
+(gpu/cudagraph_utils.py:219, 242-258), so a shorter uniform step would run
 PIECEWISE. The overlay therefore also passes ``num_speculative_tokens_per_batch_size``
-(``[[1,1,5],[2,6,3]]``): the runner captures one decode-graph family per K it
-lists (``:196-216``; 4 and 6 tokens per request) and ``config/vllm.py:952-960``
+(``[[1,1,7],[2,2,4],[3,6,2]]``): the runner captures one decode-graph family per
+K it lists (``:196-216``; 8, 5, and 3 tokens per request) and
+``config/vllm.py:952-960``
 keeps FULL graphs on the V2 runner. On the ASYNC path that table is live:
 ``AsyncScheduler`` sizes its placeholders from ``num_spec_tokens_to_schedule``
 (async_scheduler.py:23-25, from scheduler.py:1203-1205), i.e. the stock async
-scheduler would verify 5 drafts at batch size 1 and 3 at 2-6. This subclass
+scheduler would verify 7 drafts at batch size 1, 4 at batch size 2, and 2 at
+batch sizes 3-6. This subclass
 replaces the placeholder length per request right after that, so the table's
-k is neutralised while both graph families stay captured. The table also
+k is neutralised while all three graph families stay captured. The table also
 disables the uniformity padding of resumed requests (scheduler.py:893-905):
 such a request schedules one token without drafts on its first step (no
 ``scheduled_spec_decode_tokens`` entry, nothing to observe).
@@ -86,21 +83,19 @@ whole step (the base recomputes only the affected requests, :1753-1756). With
 async scheduling OFF the class disables itself; the sync path
 (``update_draft_token_ids``) is intentionally not supported.
 
-Installation: bind-mount this file at /opt/tp4/adaptive_k_scheduler.py, set
-PYTHONPATH=/opt/tp4 and pass ``--scheduler-cls
+Installation: bind-mount this file at /opt/tp2/adaptive_k_scheduler.py, set
+PYTHONPATH=/opt/tp2 and pass ``--scheduler-cls
 adaptive_k_scheduler.AdaptiveKScheduler``. The complete wiring lives in
-``cluster.env.example``.
+``scripts/rank-launcher.sh``.
 No image file is shadowed. Env knobs (read once, in the engine-core process):
 
   VLLM_ADAPTIVE_K_ENABLE   1 | 0 (0 = behave exactly like the base Scheduler)
-  VLLM_ADAPTIVE_K_LO       3      draft length in the low state
-  VLLM_ADAPTIVE_K_HI       5      draft length in the high state (clamped to SPEC_TOKENS)
-  VLLM_ADAPTIVE_K_SIGNAL   pos | mean   pos = 1 if accepted >= k_lo else 0 (default); mean = min(accepted,k_lo)/k_lo
-  VLLM_ADAPTIVE_K_UP       0.58   EMA >= up  -> high state
-  VLLM_ADAPTIVE_K_DOWN     0.42   EMA <= down -> low state (between: unchanged)
-  VLLM_ADAPTIVE_K_ALPHA    0.15   EMA weight of the newest observation
-  VLLM_ADAPTIVE_K_SEED     1.0    EMA of a new request (1.0 = start high)
-  VLLM_ADAPTIVE_K_MODE     per-request | batch-uniform
+  VLLM_ADAPTIVE_K_SET      2,4,7  candidate verified draft lengths
+  VLLM_ADAPTIVE_K_ALPHA    0.25   EMA weight of the newest observation
+  VLLM_ADAPTIVE_K_MARGIN   1.0    headroom added before selecting a candidate
+  VLLM_ADAPTIVE_K_MIN_STEPS 4     full-length observations before adapting
+  VLLM_ADAPTIVE_K_SATURATE max | n  let a fully accepted short prefix climb
+  VLLM_ADAPTIVE_K_MODE     batch-uniform | per-request
   VLLM_ADAPTIVE_K_LOG_EVERY 200   log the counters every N verify steps (0 = never)
 
 The policy is pure Python and importable without vLLM (see
@@ -119,7 +114,7 @@ __all__ = ["AdaptiveKConfig", "AdaptiveKPolicy", "AdaptiveKScheduler", "should_o
            "placeholder_len", "DraftedRing", "filter_candidates", "assign_lengths"]
 
 _MODES = ("per-request", "batch-uniform")
-_SIGNALS = ("pos", "mean")
+_SATURATE = ("max", "n")
 
 
 def _env_int(env, name: str, default: int) -> int:
@@ -139,53 +134,50 @@ def _env_float(env, name: str, default: float) -> float:
 @dataclass(frozen=True)
 class AdaptiveKConfig:
     enabled: bool = True
-    k_lo: int = 3
-    k_hi: int = 5
-    up: float = 0.58
-    down: float = 0.42
-    alpha: float = 0.15
-    seed: float = 1.0
-    mode: str = "per-request"
-    signal: str = "pos"
+    k_set: tuple[int, ...] = (2, 4, 7)
+    alpha: float = 0.25
+    margin: float = 1.0
+    min_steps: int = 4
+    saturate: str = "max"
+    mode: str = "batch-uniform"
     log_every: int = 200
 
     def __post_init__(self) -> None:
-        if self.k_lo < 1 or self.k_hi < self.k_lo:
-            raise ValueError(f"adaptive-k: need 1 <= k_lo <= k_hi, got {self.k_lo}/{self.k_hi}")
-        if not (0.0 <= self.down <= self.up <= 1.0):
-            raise ValueError(f"adaptive-k: need 0 <= down <= up <= 1, got {self.down}/{self.up}")
+        if not self.k_set or tuple(sorted(set(self.k_set))) != self.k_set or self.k_set[0] < 1:
+            raise ValueError(f"adaptive-k: k_set must be sorted, unique, and positive, got {self.k_set}")
         if not (0.0 < self.alpha <= 1.0):
             raise ValueError(f"adaptive-k: need 0 < alpha <= 1, got {self.alpha}")
-        if not (0.0 <= self.seed <= 1.0):
-            raise ValueError(f"adaptive-k: need 0 <= seed <= 1, got {self.seed}")
+        if self.margin < 0.0:
+            raise ValueError("adaptive-k: margin must be >= 0")
+        if self.min_steps < 0:
+            raise ValueError("adaptive-k: min_steps must be >= 0")
+        if self.saturate not in _SATURATE:
+            raise ValueError(f"adaptive-k: saturate must be one of {_SATURATE}, got {self.saturate!r}")
         if self.mode not in _MODES:
             raise ValueError(f"adaptive-k: mode must be one of {_MODES}, got {self.mode!r}")
-        if self.signal not in _SIGNALS:
-            raise ValueError(f"adaptive-k: signal must be one of {_SIGNALS}, got {self.signal!r}")
         if self.log_every < 0:
             raise ValueError("adaptive-k: log_every must be >= 0")
 
     @classmethod
     def from_env(cls, environ: dict[str, str] | None = None) -> "AdaptiveKConfig":
         env = os.environ if environ is None else environ
+        raw_set = (env.get("VLLM_ADAPTIVE_K_SET") or "2,4,7").strip() or "2,4,7"
         return cls(
             enabled=_env_int(env, "VLLM_ADAPTIVE_K_ENABLE", 1) != 0,
-            k_lo=_env_int(env, "VLLM_ADAPTIVE_K_LO", 3),
-            k_hi=_env_int(env, "VLLM_ADAPTIVE_K_HI", 5),
-            up=_env_float(env, "VLLM_ADAPTIVE_K_UP", 0.58),
-            down=_env_float(env, "VLLM_ADAPTIVE_K_DOWN", 0.42),
-            alpha=_env_float(env, "VLLM_ADAPTIVE_K_ALPHA", 0.15),
-            seed=_env_float(env, "VLLM_ADAPTIVE_K_SEED", 1.0),
-            mode=(env.get("VLLM_ADAPTIVE_K_MODE") or "per-request").strip() or "per-request",
-            signal=(env.get("VLLM_ADAPTIVE_K_SIGNAL") or "pos").strip() or "pos",
+            k_set=tuple(sorted({int(v.strip()) for v in raw_set.split(",") if v.strip()})),
+            alpha=_env_float(env, "VLLM_ADAPTIVE_K_ALPHA", 0.25),
+            margin=_env_float(env, "VLLM_ADAPTIVE_K_MARGIN", 1.0),
+            min_steps=_env_int(env, "VLLM_ADAPTIVE_K_MIN_STEPS", 4),
+            saturate=(env.get("VLLM_ADAPTIVE_K_SATURATE") or "max").strip() or "max",
+            mode=(env.get("VLLM_ADAPTIVE_K_MODE") or "batch-uniform").strip() or "batch-uniform",
             log_every=_env_int(env, "VLLM_ADAPTIVE_K_LOG_EVERY", 200),
         )
 
     def describe(self) -> str:
         return (
-            f"enabled={int(self.enabled)} k_lo={self.k_lo} k_hi={self.k_hi} up={self.up} "
-            f"down={self.down} alpha={self.alpha} seed={self.seed} mode={self.mode} "
-            f"signal={self.signal} log_every={self.log_every}"
+            f"enabled={int(self.enabled)} k_set={','.join(map(str, self.k_set))} "
+            f"alpha={self.alpha} margin={self.margin} min_steps={self.min_steps} "
+            f"saturate={self.saturate} mode={self.mode} log_every={self.log_every}"
         )
 
 
@@ -193,22 +185,20 @@ class AdaptiveKConfig:
 class _ReqState:
     ema: float
     k: int
+    steps: int = 0
 
 
 @dataclass
 class AdaptiveKPolicy:
-    """Per-request EMA of low-position acceptance -> draft length with hysteresis."""
+    """Per-request accepted-prefix EMA -> one of the configured draft lengths."""
 
     cfg: AdaptiveKConfig
     _state: dict[str, _ReqState] = field(default_factory=dict)
     counters: dict[str, int] = field(
         default_factory=lambda: {
             "observations": 0,
-            "decisions_lo": 0,
-            "decisions_hi": 0,
             "switches": 0,
-            "steps_uniform_lo": 0,
-            "steps_uniform_hi": 0,
+            "structured_pins": 0,
         }
     )
 
@@ -216,16 +206,17 @@ class AdaptiveKPolicy:
     def _get(self, req_id: str) -> _ReqState:
         st = self._state.get(req_id)
         if st is None:
-            st = _ReqState(ema=self.cfg.seed, k=self._k_for(self.cfg.seed, current=None))
+            st = _ReqState(ema=float(self.cfg.k_set[-1]), k=self.cfg.k_set[-1])
             self._state[req_id] = st
         return st
 
-    def _k_for(self, ema: float, current: int | None) -> int:
-        if ema >= self.cfg.up:
-            return self.cfg.k_hi
-        if ema <= self.cfg.down:
-            return self.cfg.k_lo
-        return self.cfg.k_hi if current is None else current
+    def _k_for(self, st: _ReqState) -> int:
+        if st.steps < self.cfg.min_steps:
+            return self.cfg.k_set[-1]
+        import math
+        target = int(math.ceil(st.ema + self.cfg.margin))
+        candidates = [k for k in self.cfg.k_set if k <= target]
+        return max(candidates) if candidates else self.cfg.k_set[0]
 
     def ema(self, req_id: str) -> float | None:
         st = self._state.get(req_id)
@@ -234,23 +225,12 @@ class AdaptiveKPolicy:
     def tracked(self) -> int:
         return len(self._state)
 
-    # -- signal ------------------------------------------------------------
     def signal(self, num_accepted: int, num_draft: int) -> float:
-        """Per-step signal in [0, 1] from the accepted-prefix length.
-
-        Accepted tokens are a prefix (rejection sampling stops at the first
-        rejection), so both signals look only at positions 1..k_lo, which are
-        drafted whatever k was actually verified. ``pos`` (default): 1.0 when
-        the whole prefix of length k_lo was accepted, else 0.0 — its mean is
-        the marginal P(position k_lo accepted). ``mean``: the average of the
-        first k_lo marginals, ``min(num_accepted, k_lo) / k_lo``. Drafts
-        shorter than k_lo (e.g. a chunk boundary) use their own length.
-        """
-        denom = min(self.cfg.k_lo, max(num_draft, 1))
-        accepted = min(max(num_accepted, 0), denom)
-        if self.cfg.signal == "pos":
-            return 1.0 if accepted >= denom else 0.0
-        return accepted / denom
+        """Accepted-prefix observation, allowing a short full hit to climb."""
+        accepted = min(max(num_accepted, 0), max(num_draft, 0))
+        if accepted >= num_draft and self.cfg.saturate == "max":
+            return float(self.cfg.k_set[-1])
+        return float(accepted)
 
     def observe(self, req_id: str, num_accepted: int, num_draft: int) -> float:
         if num_draft <= 0:
@@ -258,37 +238,51 @@ class AdaptiveKPolicy:
         st = self._get(req_id)
         a = self.cfg.alpha
         st.ema = a * self.signal(num_accepted, num_draft) + (1.0 - a) * st.ema
+        st.steps += 1
         self.counters["observations"] += 1
         return st.ema
 
     # -- decisions ---------------------------------------------------------
-    def decide(self, req_id: str) -> int:
+    def decide(self, req_id: str, structured: bool = False) -> int:
         st = self._get(req_id)
-        k = self._k_for(st.ema, current=st.k)
+        if structured:
+            self.counters["structured_pins"] += 1
+            k = self.cfg.k_set[-1]
+        else:
+            k = self._k_for(st)
         if k != st.k:
             self.counters["switches"] += 1
             st.k = k
-        self.counters["decisions_hi" if k == self.cfg.k_hi else "decisions_lo"] += 1
+        key = f"decisions_k{k}"
+        self.counters[key] = self.counters.get(key, 0) + 1
         return k
 
-    def decide_batch(self, req_ids) -> int:
-        """One k for the whole step: k_hi only if every request is in the high state."""
-        ks = [self.decide(r) for r in req_ids]
-        if ks and all(k == self.cfg.k_hi for k in ks):
-            self.counters["steps_uniform_hi"] += 1
-            return self.cfg.k_hi
-        self.counters["steps_uniform_lo"] += 1
-        return self.cfg.k_lo
+    def decide_batch(self, req_ids, structured_ids=()) -> int:
+        """One uniform k; uncalibrated or structured requests pin full length."""
+        req_ids = list(req_ids)
+        structured_ids = set(structured_ids)
+        ks = [self.decide(r, r in structured_ids) for r in req_ids]
+        pinned = any(r in structured_ids or self._get(r).steps < self.cfg.min_steps for r in req_ids)
+        k = self.cfg.k_set[-1] if pinned or not ks else min(ks)
+        key = f"steps_uniform_k{k}"
+        self.counters[key] = self.counters.get(key, 0) + 1
+        return k
 
     def evict(self, req_id: str) -> None:
         self._state.pop(req_id, None)
 
     def counters_line(self) -> str:
         c = self.counters
+        decisions = "/".join(
+            f"k{k}={c.get(f'decisions_k{k}', 0)}" for k in self.cfg.k_set
+        )
+        uniform = "/".join(
+            f"k{k}={c.get(f'steps_uniform_k{k}', 0)}" for k in self.cfg.k_set
+        )
         return (
             f"tracked={len(self._state)} obs={c['observations']} "
-            f"decisions lo/hi={c['decisions_lo']}/{c['decisions_hi']} switches={c['switches']} "
-            f"uniform-steps lo/hi={c['steps_uniform_lo']}/{c['steps_uniform_hi']}"
+            f"decisions {decisions} switches={c['switches']} structured-pins={c['structured_pins']} "
+            f"uniform-steps {uniform}"
         )
 
 
@@ -373,15 +367,25 @@ def filter_candidates(items) -> list[str]:
     return out
 
 
-def assign_lengths(policy: AdaptiveKPolicy, req_ids, mode: str, engine_k: int) -> dict[str, int]:
+def assign_lengths(
+    policy: AdaptiveKPolicy,
+    req_ids,
+    mode: str,
+    engine_k: int,
+    structured_ids=(),
+) -> dict[str, int]:
     """Placeholder length per candidate request for the next step (pure)."""
     req_ids = list(req_ids)
     if not req_ids:
         return {}
     if mode == "batch-uniform":
-        k_step = placeholder_len(policy.decide_batch(req_ids), engine_k)
+        k_step = placeholder_len(policy.decide_batch(req_ids, structured_ids), engine_k)
         return {r: k_step for r in req_ids}
-    return {r: placeholder_len(policy.decide(r), engine_k) for r in req_ids}
+    structured_ids = set(structured_ids)
+    return {
+        r: placeholder_len(policy.decide(r, r in structured_ids), engine_k)
+        for r in req_ids
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -436,14 +440,13 @@ if _HAVE_VLLM:
                 if cfg.enabled and engine_k < 1:
                     logger.error("adaptive-k: engine drafts no tokens (num_spec_tokens=%s); disabling", engine_k)
                     cfg = AdaptiveKConfig(**{**cfg.__dict__, "enabled": False})
-                if cfg.enabled and engine_k < cfg.k_hi:
+                if cfg.enabled and engine_k < cfg.k_set[-1]:
+                    clamped = tuple(sorted({min(k, engine_k) for k in cfg.k_set}))
                     logger.warning(
-                        "adaptive-k: engine drafts %s tokens but k_hi=%s; clamping k_hi to %s",
-                        engine_k, cfg.k_hi, engine_k,
+                        "adaptive-k: engine drafts %s tokens but k_set=%s; clamping to %s",
+                        engine_k, cfg.k_set, clamped,
                     )
-                    cfg = AdaptiveKConfig(
-                        **{**cfg.__dict__, "k_hi": engine_k, "k_lo": min(cfg.k_lo, engine_k)}
-                    )
+                    cfg = AdaptiveKConfig(**{**cfg.__dict__, "k_set": clamped})
             except Exception:  # noqa: BLE001 - never let the policy kill the engine core
                 logger.exception("adaptive-k: configuration failed, running as the base AsyncScheduler")
                 cfg = AdaptiveKConfig(enabled=False)
@@ -489,7 +492,18 @@ if _HAVE_VLLM:
                 ))
             candidates = filter_candidates(items)
             self._ak_ring.push(candidates)
-            lengths = assign_lengths(self._ak, candidates, self._ak_cfg.mode, self._ak_engine_k)
+            structured = {
+                req_id for req_id in candidates
+                if bool(getattr(reqs[req_id], "use_structured_output", False))
+                or getattr(reqs[req_id], "structured_output_request", None) is not None
+            }
+            lengths = assign_lengths(
+                self._ak,
+                candidates,
+                self._ak_cfg.mode,
+                self._ak_engine_k,
+                structured,
+            )
             for req_id, k in lengths.items():
                 reqs[req_id].spec_token_ids = self._ak_placeholders[k]
 

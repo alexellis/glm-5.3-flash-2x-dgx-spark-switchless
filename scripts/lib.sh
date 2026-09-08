@@ -34,8 +34,8 @@ done
     echo "ADAPTIVE_K must be 0 or 1" >&2
     exit 1
 }
-if [[ "$ADAPTIVE_K" == "1" && "$SPEC_TOKENS" != "5" ]]; then
-    echo "ADAPTIVE_K=1 requires SPEC_TOKENS=5" >&2
+if [[ "$ADAPTIVE_K" == "1" && "$SPEC_TOKENS" != "7" ]]; then
+    echo "ADAPTIVE_K=1 requires SPEC_TOKENS=7" >&2
     exit 1
 fi
 

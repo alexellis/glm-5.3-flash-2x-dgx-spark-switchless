@@ -1,0 +1,82 @@
+{
+  "schema": "glm53-adaptive-k-comparison/v1",
+  "collected_at": "2026-09-08",
+  "recipe_revision": "2b47615567698211aadfb7de886a70b24ea24f61",
+  "recipe_dirty": true,
+  "runtime_diff_sha256": "c3d36193fe85f37dca221e2cc576c6d30e267d3e493cbd4af788ba2c2a535cb0",
+  "adaptive_scheduler_sha256": "ca82980a69b31313e7e478d1f4a402882cf01c23d0a282116d2aff825373d3bd",
+  "runtime": {
+    "model": "LibertAIDAI/GLM-5.3-Flash-NVFP4",
+    "model_revision": "caca4e6a4ebbd66f159d3d2fc256683fd6e27177",
+    "vllm": "0.1.dev20051+g487ecf187",
+    "kv": "FP8 E4M3",
+    "moe_backend": "flashinfer_cutlass",
+    "tensor_parallel_size": 2
+  },
+  "policy": {
+    "engine_draft_tokens": 7,
+    "candidates": [2, 4, 7],
+    "alpha": 0.25,
+    "margin": 1.0,
+    "minimum_full_steps": 4,
+    "saturated_short_observation": "7",
+    "batch_uniform": true,
+    "structured_pinned_to": 7
+  },
+  "rigmark_matched": {
+    "protocol": "1.1.0",
+    "reasoning_effort": "low",
+    "runs_per_decode_workload": 5,
+    "previous_adaptive_3_5": {
+      "code_tok_s": 42.575,
+      "prose_tok_s": 22.162,
+      "structured_tok_s": 54.623,
+      "c2_aggregate_tok_s": 42.765,
+      "c4_aggregate_tok_s": 61.109,
+      "logical_kv_tokens": 427708
+    },
+    "adaptive_2_4_7": {
+      "code_tok_s": 44.282,
+      "prose_tok_s": 22.647,
+      "structured_tok_s": 66.475,
+      "c2_aggregate_tok_s": 49.066,
+      "c4_aggregate_tok_s": 64.597,
+      "logical_kv_tokens": 394488
+    },
+    "receipt_sha256": "90f9a2ab034f53ddaacf9ce56574b4c95523b46f80ac85e740ef814a29be3cc5",
+    "concurrency_receipt_sha256": "2cfbb3f77687d67920ca39cc9046fcccc5bbd3a669f7d5a83c83b094b12c9f6a"
+  },
+  "mia_hashmap_prompt_immediate_control": {
+    "thinking": false,
+    "temperature": 0,
+    "runs": 5,
+    "before_adaptive_3_5_tok_s": 32.1866091848558,
+    "after_adaptive_2_4_7_tok_s": 30.93676670696856,
+    "before_sha256": "d6ca8d64623c0278d73ff568af203d1aea8f2cd70773b1a6d0f7027247b4700e",
+    "after_sha256": "9ce6c649171414fc6640e6c3411cea351ff88724df4361fe4bea08c06ef0ccaa6"
+  },
+  "structured_count_immediate_control": {
+    "prompt": "count from 1 to 200",
+    "thinking": false,
+    "temperature": 0,
+    "runs": 5,
+    "before_adaptive_3_5_tok_s": 58.77853077637119,
+    "after_adaptive_2_4_7_tok_s": 70.47393264679108,
+    "before_sha256": "e415cd2bc6619217d3fd12a07d3332021edc9e07e8aac3adaad14cadd9d2406f",
+    "after_sha256": "c05e7c92cb1f7b4a9b541ccd7ec738ccfda60e34c000f8c1fcbcf54017bb4aa6"
+  },
+  "prefill": {
+    "receipt_sha256": "5b3a7118bc0acca24247536109b760638f7ff935ac11c297a5181d640c1da726",
+    "depths": [
+      {"tokens": 8192, "cold_ttft_s": 4.4337, "cold_tok_s": 1847.7, "warm_tok_s": 1817.4},
+      {"tokens": 32768, "cold_ttft_s": 17.1809, "cold_tok_s": 1907.2, "warm_tok_s": 11006.5},
+      {"tokens": 65536, "cold_ttft_s": 34.2342, "cold_tok_s": 1914.3, "warm_tok_s": 11381.7}
+    ]
+  },
+  "functional_gate": [
+    "text",
+    "tool_call",
+    "80032_token_retrieval",
+    "image"
+  ]
+}

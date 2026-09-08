@@ -67,8 +67,19 @@ wait_for_worker() {
     return 1
 }
 
+verify_config_parity() {
+    local head_hash worker_hash
+    head_hash=$(sha256sum "$CONFIG_FILE" | cut -d ' ' -f1)
+    worker_hash=$(remote "sha256sum '$CONFIG_FILE' | cut -d ' ' -f1")
+    if [[ "$head_hash" != "$worker_hash" ]]; then
+        log "configuration differs between head and worker: $CONFIG_FILE"
+        return 1
+    fi
+}
+
 start_pair() {
     wait_for_worker
+    verify_config_parity
     if healthy && head_running && worker_running; then
         log "both ranks and /health are green"
         return 0

@@ -26,6 +26,11 @@ The systemd unit is now `Type=simple`. Its foreground supervisor traps stop and
 exit, and `ExecStopPost` also calls the pair teardown. A failure or interruption
 therefore removes worker and head containers together.
 
+The launcher also requires `/etc/glm53-tp2.env` to be byte-for-byte identical
+on both ranks. An asymmetric KV allocation is otherwise accepted by each
+worker independently and silently limits the whole TP pool to the smaller
+rank.
+
 ## Observed proof
 
 With the correction mounted on both ranks:

@@ -1,0 +1,66 @@
+{
+  "schema": "glm53-tp2-kv-validation-v1",
+  "run": {
+    "finished_at": "2026-09-08T21:49:27Z",
+    "model": "LibertAIDAI/GLM-5.3-Flash-NVFP4",
+    "model_revision": "caca4e6a4ebbd66f159d3d2fc256683fd6e27177",
+    "recipe": "alexellis/glm-5.3-flash-2x-dgx-spark-switchless",
+    "recipe_revision": "2b47615567698211aadfb7de886a70b24ea24f61",
+    "recipe_dirty": true,
+    "pre_receipt_diff_sha256": "c9ae1bccf47583784087bd0ab45e11bcc435dfb3a9bc11c1a345aa02b4c0e152",
+    "hardware": "2x NVIDIA DGX Spark (GB10)",
+    "topology": "TP2, switchless direct-link RoCE",
+    "kv_cache_dtype": "FP8 E4M3",
+    "kv_cache_memory_per_rank": 4831838208,
+    "speculative_policy": "adaptive batch-uniform k=2, k=4, or k=7"
+  },
+  "capacity": {
+    "previous_kv_cache_memory_per_rank": 4294967296,
+    "previous_logical_tokens": 394488,
+    "logical_tokens": 442845,
+    "gain_tokens": 48357,
+    "gain_percent": 12.258171314726989,
+    "maximum_concurrency_at_262144_tokens": 1.69,
+    "both_ranks_reported_4_5_gib": true
+  },
+  "standard_gate": {
+    "text": "pass",
+    "tool_call": "pass",
+    "retrieval_prompt_tokens": 80032,
+    "retrieval": "pass",
+    "image": "pass"
+  },
+  "cold_256k": {
+    "prompt_tokens": 256001,
+    "completion_tokens": 2,
+    "output": "OK",
+    "ttft_seconds": 138.4379142159596,
+    "effective_prefill_tokens_per_second": 1849.2116227686367,
+    "local_compute_tokens": 256001,
+    "local_cache_hit_tokens": 0,
+    "result": "pass"
+  },
+  "concurrent_deep": {
+    "requests": 2,
+    "prompt_tokens_per_request": [180001, 180001],
+    "completion_tokens_per_request": [2, 2],
+    "outputs": ["OK", "OK"],
+    "ttft_seconds": [190.4088875488378, 95.30953375296667],
+    "local_compute_tokens": 360002,
+    "local_cache_hit_tokens": 0,
+    "result": "pass"
+  },
+  "memory": {
+    "sample_interval_seconds": 2,
+    "head_available_low_water_kib": 2964068,
+    "worker_available_low_water_kib": 5287608,
+    "head_available_low_water_gib": 2.8267555236816406,
+    "worker_available_low_water_gib": 5.042655944824219
+  },
+  "kernel_audit": {
+    "current_xid_count": [0, 0],
+    "current_nv_err_no_memory_count": [5, 4],
+    "previous_4_gib_nv_err_no_memory_count": [2, 19],
+    "interpretation": "Recoverable allocation-probe messages pre-date the KV expansion; no Xid, process OOM, retry, or failed request occurred."
+  }
+}

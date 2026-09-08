@@ -9,7 +9,9 @@ This recipe integrates work from:
 - Tony Dennis and contributors for the DGX Spark SM121 and DFlash2 serving
   stack;
 - Jacopo Nardiello for the acceptance-guided adaptive-k scheduler, retained
-  with its upstream Apache-2.0 provenance header; and
+  with its upstream Apache-2.0 provenance header;
+- MiaAI-Lab for the accepted-prefix EMA, 2/4/7 verification policy, and
+  batch-uniform CUDA-graph strategy; and
 - NVIDIA for DGX Spark, CUDA, and NCCL.
 
 The scripts and documentation authored in this repository are MIT licensed.
