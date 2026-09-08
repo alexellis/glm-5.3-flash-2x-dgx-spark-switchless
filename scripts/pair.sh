@@ -7,7 +7,7 @@ source "$SCRIPT_DIR/lib.sh"
 
 MODE="${1:-run}"
 HEALTH_URL="http://127.0.0.1:${PORT}/health"
-READY_TIMEOUT=2400
+READY_TIMEOUT=7200
 LOGFILE="$RUNTIME_DIR/service.log"
 LOCKFILE="$RUNTIME_DIR/pair.lock"
 

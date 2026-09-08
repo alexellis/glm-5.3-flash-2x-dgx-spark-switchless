@@ -8,7 +8,11 @@ source "$SCRIPT_DIR/lib.sh"
 [[ $(id -u) -eq 0 ]] || { echo "run as root" >&2; exit 1; }
 install -d -m 0755 "$RUNTIME_DIR/patches" "$RUNTIME_DIR/templates"
 
-docker pull "$IMAGE"
+if docker image inspect "$IMAGE" >/dev/null 2>&1; then
+    echo "using local image: $IMAGE"
+else
+    docker pull "$IMAGE"
+fi
 extract_name="glm53-patch-source-$$"
 docker create --name "$extract_name" "$IMAGE" >/dev/null
 cleanup() { docker rm "$extract_name" >/dev/null 2>&1 || true; }
