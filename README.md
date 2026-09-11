@@ -144,8 +144,14 @@ Start with a normal direct SparkLink/RoCE pair. The fabric interface must carry
 one `/24` address on each node, MTU 9000, and the peers must ping over that
 interface. The exact patched NCCL library used by the reference pair has SHA256
 `ccd57342449c3f680befcb379329b935746e5299dc4de5f2516146e0411bd85f`;
-the launcher refuses a different binary. Build notes for the skip-tree-connect
-NCCL 2.30.7 patch are retained in the sibling TP4 recipe.
+the launcher refuses a different binary. Its complete legacy/clean provenance,
+future ARM64 builds, and loading checks now live in
+[`alexellis/switchless-nccl`](https://github.com/alexellis/switchless-nccl).
+
+Both ranks in a direct pair are adjacent, so a generic TP2 deployment does not
+need to suppress NCCL Tree setup. This recipe retains the legacy ring-only
+settings solely because they are part of the exact measured appliance contract;
+do not copy them into an unrelated two-node profile without qualification.
 
 The rank launcher treats these as gates, not suggestions. Before loading the
 model on either node it verifies the active RoCE-v2 GID and its interface
